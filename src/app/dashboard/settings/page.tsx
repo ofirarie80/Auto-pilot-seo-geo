@@ -53,7 +53,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
 
         <section className={`${card} flex flex-col gap-4`}>
           <h2 className="text-[17px] font-semibold">מתחרים ({comps?.length ?? 0})</h2>
-          {!comps?.length && <p className="text-sm text-muted">עוד אין מתחרים. בלי מתחרים אין השוואת "נתח קול".</p>}
+          {!comps?.length && <p className="text-sm text-muted">עוד אין מתחרים. בלי מתחרים אין השוואת נתח קול.</p>}
           <ul className="flex flex-col divide-y divide-[#EEF1F4] dark:divide-white/5">
             {comps?.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">

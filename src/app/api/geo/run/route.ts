@@ -31,21 +31,25 @@ export async function GET(req: Request) {
     siteIds = (data ?? []).map((s) => s.id);
   }
 
-  const results = [];
-  const messages: string[] = [];
-  for (const id of siteIds) {
-    // Technical audit first: cheap, needs no API keys, and runs even for sites without prompts.
-    const audit = await runAudit(id).catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
-    if ("score" in audit) messages.push(`🛠️ ${audit.site} · ציון טכני ל-AI: ${audit.score}/100`);
-    try {
-      const summary = await runSite(id);
-      results.push(summary);
-      const report = await getSiteReport(id);
-      if (report?.hasData) messages.push(reportText(report));
-    } catch (e) {
-      results.push({ site: id, error: e instanceof Error ? e.message : String(e) });
-    }
-  }
+  // Sites run in parallel so a full weekly run fits in one serverless call.
+  const perSite = await Promise.all(
+    siteIds.map(async (id) => {
+      const messages: string[] = [];
+      // Technical audit first: cheap, needs no API keys, and runs even for sites without prompts.
+      const audit = await runAudit(id).catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
+      if ("score" in audit) messages.push(`🛠️ ${audit.site} · ציון טכני ל-AI: ${audit.score}/100`);
+      try {
+        const summary = await runSite(id);
+        const report = await getSiteReport(id);
+        if (report?.hasData) messages.push(reportText(report));
+        return { result: summary as object, messages };
+      } catch (e) {
+        return { result: { site: id, error: e instanceof Error ? e.message : String(e) }, messages };
+      }
+    }),
+  );
+  const results = perSite.map((p) => p.result);
+  const messages = perSite.flatMap((p) => p.messages);
 
   const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
   const whatsapp = messages.length

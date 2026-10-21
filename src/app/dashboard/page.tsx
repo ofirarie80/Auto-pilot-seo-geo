@@ -126,6 +126,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             </Link>
           ))}
         </nav>
+        <Link href={`/dashboard/settings?site=${r.site.id}`} className="ms-auto rounded-md px-3.5 py-2.5 text-sm text-[#C7D3DD] hover:text-white">
+          הגדרות
+        </Link>
       </header>
 
       <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 pb-12 pt-7 sm:px-8">

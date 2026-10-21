@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { runSite } from "@/lib/geo/run";
+import { getSiteReport, reportText } from "@/lib/geo/report";
+import { sendWhatsApp } from "@/lib/notify/whatsapp";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // seconds — AI answers with web search are slow
@@ -29,12 +31,22 @@ export async function GET(req: Request) {
   }
 
   const results = [];
+  const messages: string[] = [];
   for (const id of siteIds) {
     try {
-      results.push(await runSite(id));
+      const summary = await runSite(id);
+      results.push(summary);
+      const report = await getSiteReport(id);
+      if (report?.hasData) messages.push(reportText(report));
     } catch (e) {
       results.push({ site: id, error: e instanceof Error ? e.message : String(e) });
     }
   }
-  return NextResponse.json({ ok: true, results });
+
+  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  const whatsapp = messages.length
+    ? await sendWhatsApp(messages.join("\n\n") + (base ? `\n\n${base}/dashboard` : ""))
+    : { sent: false, error: "no results" };
+
+  return NextResponse.json({ ok: true, results, whatsapp });
 }

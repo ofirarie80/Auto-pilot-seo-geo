@@ -39,6 +39,8 @@ export async function runSite(siteId: string): Promise<RunSummary> {
     db.from("competitors").select("name, domain, brand_terms").eq("site_id", siteId),
   ]);
 
+  if (!prompts?.length) throw new Error(`No active prompts for ${site.name}`);
+
   const engines = enabledEngines();
   if (!engines.length) throw new Error("No AI engine API keys configured");
 

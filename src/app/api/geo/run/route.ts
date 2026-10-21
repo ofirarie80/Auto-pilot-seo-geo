@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { runSite } from "@/lib/geo/run";
 import { getSiteReport, reportText } from "@/lib/geo/report";
 import { sendWhatsApp } from "@/lib/notify/whatsapp";
+import { runAudit } from "@/lib/audit/run";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // seconds — AI answers with web search are slow
@@ -33,6 +34,9 @@ export async function GET(req: Request) {
   const results = [];
   const messages: string[] = [];
   for (const id of siteIds) {
+    // Technical audit first: cheap, needs no API keys, and runs even for sites without prompts.
+    const audit = await runAudit(id).catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
+    if ("score" in audit) messages.push(`🛠️ ${audit.site} · ציון טכני ל-AI: ${audit.score}/100`);
     try {
       const summary = await runSite(id);
       results.push(summary);

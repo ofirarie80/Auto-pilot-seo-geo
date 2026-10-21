@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getSiteReport, ENGINES, ENGINE_LABEL, type Cell } from "@/lib/geo/report";
+import { latestAudit } from "@/lib/audit/run";
+import type { CheckStatus } from "@/lib/audit/geo-audit";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "דשבורד · Lionet Pilot" };
@@ -21,6 +23,46 @@ const CELL: Record<Cell, { label: string; cls: string }> = {
   none: { label: "—", cls: "text-[#8A97A3]" },
   na: { label: "·", cls: "text-[#C3CCD4]" },
 };
+
+const STATUS: Record<CheckStatus, { label: string; cls: string }> = {
+  pass: { label: "תקין", cls: "bg-[#E1F3E8] text-[#1F7A45]" },
+  warn: { label: "לשפר", cls: "bg-[#FBEFD9] text-[#8A4B00]" },
+  fail: { label: "בעיה", cls: "bg-[#FDE8E6] text-[#B42318]" },
+};
+
+async function AuditSection({ siteId }: { siteId: string }) {
+  const a = await latestAudit(siteId);
+  const ordered = a ? [...a.checks].sort((x, y) => ["fail", "warn", "pass"].indexOf(x.status) - ["fail", "warn", "pass"].indexOf(y.status)) : [];
+  return (
+    <section className={`${card} flex flex-col gap-4`}>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className="text-[17px] font-semibold">מוכנות טכנית ל-AI</h2>
+        {a && (
+          <span className="text-sm text-muted">
+            ציון <b className="text-2xl text-foreground tabular-nums">{a.score}</b>/100 · נבדק{" "}
+            {new Date(a.created_at).toLocaleDateString("he-IL", { timeZone: "Asia/Jerusalem" })}
+          </span>
+        )}
+      </div>
+      {!a ? (
+        <p className="text-sm text-muted">הסריקה הטכנית תרוץ יחד עם הבדיקה השבועית הבאה.</p>
+      ) : (
+        <ul className="grid gap-2.5 [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))]">
+          {ordered.map((c) => (
+            <li key={c.id} className="flex flex-col gap-1 rounded-lg border border-[#EEF1F4] p-3 dark:border-white/5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium">{c.title}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS[c.status].cls}`}>{STATUS[c.status].label}</span>
+              </div>
+              <span className="text-xs text-muted">{c.detail}</span>
+              {c.fix && <span className="text-sm">{c.fix}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
 
 function Trend({ points }: { points: { week: string; rate: number }[] }) {
   if (points.length < 2) {
@@ -95,6 +137,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               : "עוד לא רצה בדיקה לאתר הזה."}
           </p>
         </div>
+
+        <AuditSection siteId={r.site.id} />
 
         {!r.hasData ? (
           <section className={card}>

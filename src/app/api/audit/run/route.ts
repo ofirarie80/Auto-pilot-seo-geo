@@ -13,7 +13,9 @@ export const maxDuration = 60;
  */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  // Header for the cron; ?key= so the owner can trigger a run by tapping a link.
+  const key = new URL(req.url).searchParams.get("key");
+  if (!secret || (req.headers.get("authorization") !== `Bearer ${secret}` && key !== secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const one = new URL(req.url).searchParams.get("site");

@@ -19,7 +19,7 @@ export default function AppHeader({
   return (
     <header className="flex flex-wrap items-center gap-x-6 gap-y-3 bg-[#13212E] px-4 py-3.5 text-white sm:px-8">
       <div className="flex items-baseline gap-2.5">
-        <Link href={`/dashboard?org=${ctx.org.id}`} className="text-xl font-semibold text-white">Lionet Pilot</Link>
+        <Link href={`/dashboard/overview?org=${ctx.org.id}`} className="text-xl font-semibold text-white">Lionet Pilot</Link>
         <span className="text-xs text-[#9FB3C3]">{ctx.org.name} · מסלול {ctx.plan.name}</span>
       </div>
       {ctx.orgs.length > 1 && (
@@ -46,7 +46,9 @@ export default function AppHeader({
             {used.toLocaleString("he-IL")} / {quota.toLocaleString("he-IL")} תשובות החודש
           </span>
         )}
-        <Link href={`/dashboard?org=${ctx.org.id}${currentSite ? `&site=${currentSite}` : ""}`}
+        <Link href={`/dashboard/overview?org=${ctx.org.id}`}
+          className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">סקירה</Link>
+        <Link href={`/dashboard?org=${ctx.org.id}&site=${currentSite ?? sites[0]?.id ?? ""}`}
           className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">נראות</Link>
         <Link href={`/dashboard/content?org=${ctx.org.id}${currentSite ? `&site=${currentSite}` : ""}`}
           className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">תוכן</Link>

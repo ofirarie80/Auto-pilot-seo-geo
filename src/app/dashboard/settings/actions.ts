@@ -135,3 +135,39 @@ export async function disconnectGoogle(f: FormData) {
   await supabaseAdmin().from("google_connections").delete().eq("org_id", orgId);
   back(f, "Google נותק.");
 }
+
+// ───────── WordPress ─────────
+
+export async function connectWordPress(f: FormData) {
+  const { wpBase, testConnection, wpErrorMessage } = await import("@/lib/wordpress");
+  const { encrypt } = await import("@/lib/crypto");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const siteId = str(f, "site_id");
+  const db = await supabaseUser();
+  const { data: site } = await db.from("sites").select("id, domain").eq("id", siteId).maybeSingle();
+  if (!site) back(f, "האתר לא נמצא בחשבון שלכם.");
+  const base = wpBase(str(f, "wp_url") || site.domain);
+  const user = str(f, "wp_user");
+  const pass = String(f.get("wp_pass") ?? "");
+  if (!base || !user || pass.replace(/\s+/g, "").length < 16) back(f, "צריך כתובת אתר, שם משתמש וסיסמת אפליקציה (24 תווים).");
+  let name = "";
+  try {
+    name = (await testConnection(base, user, pass)).name;
+  } catch (e) {
+    back(f, wpErrorMessage(e));
+  }
+  await supabaseAdmin().from("wp_connections").upsert({
+    site_id: siteId, wp_url: base, username: user, app_password_enc: encrypt(pass.replace(/\s+/g, "")),
+    wp_user_name: name, updated_at: new Date().toISOString(),
+  });
+  back(f, `WordPress חובר בהצלחה (משתמש: ${name}).`);
+}
+
+export async function disconnectWordPress(f: FormData) {
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const db = await supabaseUser();
+  const { data: site } = await db.from("sites").select("id").eq("id", str(f, "site_id")).maybeSingle();
+  if (!site) back(f, "האתר לא נמצא.");
+  await supabaseAdmin().from("wp_connections").delete().eq("site_id", site.id);
+  back(f, "WordPress נותק.");
+}

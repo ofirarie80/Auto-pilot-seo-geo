@@ -6,7 +6,7 @@ import AppHeader from "../../AppHeader";
 import SubmitButton from "../SubmitButton";
 import CopyButton from "../CopyButton";
 import { STATUS_LABEL } from "../status";
-import { rewriteArticle, saveArticle, setArticleStatus, deleteArticle } from "../actions";
+import { rewriteArticle, saveArticle, setArticleStatus, deleteArticle, publishToWordPress } from "../actions";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -50,6 +50,8 @@ export default async function ArticlePreview({
   if (!item) notFound();
   const { data: site } = await ctx.db.from("sites").select("id, name, domain, brand_terms").eq("id", item.site_id).single();
   const { data: sites } = await ctx.db.from("sites").select("id, name").eq("org_id", ctx.org.id).order("created_at");
+  const { data: wpConn } = await ctx.db.from("wp_connections").select("wp_url").eq("site_id", item.site_id).maybeSingle();
+  const nowLocal = new Date(Date.now() + 26 * 3600_000).toLocaleString("sv-SE", { timeZone: "Asia/Jerusalem" }).slice(0, 16).replace(" ", "T");
 
   const faq = (item.faq ?? []) as { q: string; a: string }[];
   const bodyHtml = renderMarkdown(item.body_md);
@@ -107,11 +109,47 @@ export default async function ArticlePreview({
                     <SubmitButton variant="ghost">החזרה לטיוטה</SubmitButton></form>
                 )}
               </div>
-              <p className="text-xs text-muted">שום דבר לא מתפרסם אוטומטית. בינתיים אפשר להעתיק את ה-HTML ולהדביק ב-WordPress.</p>
+              <p className="text-xs text-muted">שום דבר לא מתפרסם בלי אישור שלכם. אפשר גם להעתיק את ה-HTML ולהדביק ידנית.</p>
               <div className="flex flex-wrap gap-2">
                 <CopyButton text={exportHtml} label="העתקת HTML" />
                 <CopyButton text={item.body_md} label="העתקת Markdown" />
               </div>
+            </section>
+
+            <section className={`${card} flex flex-col gap-3`}>
+              <h2 className="font-semibold">פרסום ב-WordPress</h2>
+              {item.wp_post_id && (
+                <p className="text-sm">
+                  {item.wp_status === "future" && item.scheduled_for
+                    ? `מתוזמן ל-${new Date(item.scheduled_for).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem" })}`
+                    : item.wp_status === "publish" ? "פורסם באתר" : "נמצא ב-WordPress כטיוטה"}
+                  {item.wp_link && <> · <a href={item.wp_link} target="_blank" rel="noreferrer" className="text-accent underline">פתיחה</a></>}
+                </p>
+              )}
+              {!wpConn ? (
+                <p className="text-sm text-muted">
+                  כדי לפרסם מכאן מחברים WordPress ב<Link href={`/dashboard/settings?org=${ctx.org.id}&site=${item.site_id}`} className="text-accent underline">הגדרות</Link>.
+                </p>
+              ) : item.status !== "approved" && item.status !== "published" ? (
+                <p className="text-sm text-muted">מאשרים את המאמר, ואז אפשר לשלוח, לפרסם או לתזמן.</p>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    <form action={publishToWordPress}>{hidden}<input type="hidden" name="mode" value="draft" />
+                      <SubmitButton variant="ghost" pendingText="שולח…">{item.wp_post_id ? "עדכון הטיוטה" : "שליחה כטיוטה"}</SubmitButton></form>
+                    <form action={publishToWordPress}>{hidden}<input type="hidden" name="mode" value="publish" />
+                      <SubmitButton pendingText="מפרסם…">פרסום עכשיו</SubmitButton></form>
+                  </div>
+                  <form action={publishToWordPress} className="flex flex-wrap items-end gap-2">
+                    {hidden}<input type="hidden" name="mode" value="future" />
+                    <label className="flex flex-col gap-1 text-sm">
+                      תזמון (שעון ישראל)
+                      <input type="datetime-local" name="when" required defaultValue={nowLocal} className={`${input} w-auto`} dir="ltr" />
+                    </label>
+                    <SubmitButton variant="ghost" pendingText="מתזמן…">תזמון</SubmitButton>
+                  </form>
+                </div>
+              )}
             </section>
 
             <section className={`${card} flex flex-col gap-3`}>

@@ -2,7 +2,7 @@ import { getOrgContext } from "@/lib/auth";
 import AppHeader from "../AppHeader";
 import {
   addSite, addPrompt, togglePrompt, deletePrompt, addCompetitor, deleteCompetitor, updateBrandTerms, updateNotifications,
-  setGscProperty, syncGscNow, disconnectGoogle,
+  setGscProperty, syncGscNow, disconnectGoogle, connectWordPress, disconnectWordPress,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +28,9 @@ export default async function Settings({
     .from("google_connections").select("google_email, properties, updated_at").eq("org_id", ctx.org.id).maybeSingle();
   const planHasGsc = plan.gsc === true;
   const site = sites?.find((s) => s.id === siteParam) ?? sites?.[0];
+  const { data: wpConn } = site
+    ? await db.from("wp_connections").select("wp_url, username, wp_user_name, updated_at").eq("site_id", site.id).maybeSingle()
+    : { data: null };
 
   const [{ data: prompts }, { data: comps }] = site
     ? await Promise.all([
@@ -139,6 +142,41 @@ export default async function Settings({
               </form>
             </section>
           </>
+        )}
+
+        {site && (
+          <section className={`${card} flex flex-col gap-3`}>
+            <h2 className="text-[17px] font-semibold">WordPress · {site.name}</h2>
+            {wpConn ? (
+              <>
+                <p className="text-sm">
+                  מחובר: <b dir="ltr">{wpConn.wp_url}</b> · משתמש {wpConn.wp_user_name ?? wpConn.username}
+                </p>
+                <p className="text-sm text-muted">מאמרים מאושרים אפשר לשלוח מכאן כטיוטה, לפרסם או לתזמן.</p>
+                <form action={disconnectWordPress}>
+                  {hidden}
+                  <button className={ghost}>ניתוק WordPress</button>
+                </form>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted">
+                  ב-WordPress נכנסים ל<b>משתמשים ← פרופיל ← סיסמאות אפליקציה</b>, יוצרים סיסמה בשם Lionet Pilot ומדביקים כאן.
+                  זו לא הסיסמה הרגילה שלכם, ואפשר לבטל אותה בכל רגע.
+                </p>
+                <form action={connectWordPress} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+                  {hidden}
+                  <label className="sr-only" htmlFor="wp-url">כתובת האתר</label>
+                  <input id="wp-url" name="wp_url" dir="ltr" defaultValue={site.domain} className={input} />
+                  <label className="sr-only" htmlFor="wp-user">שם משתמש</label>
+                  <input id="wp-user" name="wp_user" required dir="ltr" placeholder="שם משתמש ב-WordPress" autoComplete="off" className={input} />
+                  <label className="sr-only" htmlFor="wp-pass">סיסמת אפליקציה</label>
+                  <input id="wp-pass" name="wp_pass" type="password" required dir="ltr" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" autoComplete="new-password" className={input} />
+                  <button className={btn}>חיבור ובדיקה</button>
+                </form>
+              </>
+            )}
+          </section>
         )}
 
         <section className={`${card} flex flex-col gap-3`}>

@@ -29,7 +29,7 @@ const SYSTEM = `אתה כותב תוכן SEO ו-GEO בעברית לעסק ישר
 - מבנה: כותרות ## ו-###, פסקאות קצרות, רשימות או טבלה כשזה עוזר להשוות.
 - להציג את העסק כאפשרות רלוונטית בצורה עניינית, לא כפרסומת. מותר להזכיר שיש גם חלופות.
 - אסור להמציא עובדות: לא מחירים, לא סטטיסטיקות, לא שנות ותק, לא שמות לקוחות. כשצריך נתון שאינך יודע, כתוב [לבדיקה: מה צריך להשלים].
-- בלי מילות מפתח דחוסות. אורך 900–1400 מילים.
+- בלי מילות מפתח דחוסות. אורך חובה: לפחות 1000 מילים בגוף המאמר (bodyMd), עד 1400. מאמר קצר יותר ייפסל.
 - בסוף: סעיף "## שאלות נפוצות" עם 4–6 שאלות ותשובות קצרות (הן יופיעו גם ב-faq).
 
 החזר JSON בלבד:
@@ -50,46 +50,41 @@ function userPrompt(i: ArticleInput) {
   return lines.join("\n\n");
 }
 
-/** Writes (or rewrites) one article. Uses Claude when an Anthropic key exists, otherwise OpenAI. */
-export async function generateArticle(input: ArticleInput): Promise<Draft & { model: string }> {
+async function callModel(system: string, user: string): Promise<{ text: string; model: string }> {
   const anthropic = process.env.ANTHROPIC_API_KEY?.trim();
   const openai = process.env.OPENAI_API_KEY?.trim();
-  let text = "";
-  let model = "";
-
   if (anthropic) {
-    model = process.env.CONTENT_MODEL_ANTHROPIC ?? "claude-sonnet-5-5";
+    const model = process.env.CONTENT_MODEL_ANTHROPIC ?? "claude-sonnet-5-5";
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": anthropic, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model, max_tokens: 8000, system: SYSTEM, messages: [{ role: "user", content: userPrompt(input) }] }),
+      body: JSON.stringify({ model, max_tokens: 12000, system, messages: [{ role: "user", content: user }] }),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(`content_ai_${res.status}`);
-    text = (json.content ?? []).filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("");
-  } else if (openai) {
-    model = process.env.CONTENT_MODEL ?? "gpt-4.1";
+    return { model, text: (json.content ?? []).filter((b: { type: string }) => b.type === "text").map((b: { text: string }) => b.text).join("") };
+  }
+  if (openai) {
+    const model = process.env.CONTENT_MODEL ?? "gpt-4.1";
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${openai}` },
       body: JSON.stringify({
-        model,
-        response_format: { type: "json_object" },
-        messages: [{ role: "system", content: SYSTEM }, { role: "user", content: userPrompt(input) }],
+        model, max_tokens: 12000, response_format: { type: "json_object" },
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
       }),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(`content_ai_${res.status}`);
-    text = json.choices?.[0]?.message?.content ?? "";
-  } else {
-    throw new Error("no_ai_key");
+    return { model, text: json.choices?.[0]?.message?.content ?? "" };
   }
+  throw new Error("no_ai_key");
+}
 
-  const jsonText = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
-  const d = JSON.parse(jsonText) as Partial<Draft>;
+function parseDraft(text: string): Draft {
+  const d = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as Partial<Draft>;
   if (!d.title || !d.bodyMd) throw new Error("content_bad_output");
   return {
-    model,
     title: String(d.title).trim(),
     slug: String(d.slug ?? "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80),
     metaDescription: String(d.metaDescription ?? "").trim(),
@@ -99,6 +94,28 @@ export async function generateArticle(input: ArticleInput): Promise<Draft & { mo
       .filter((x) => x.q && x.a)
       .slice(0, 8),
   };
+}
+
+const MIN_WORDS = 900;
+
+const EXPAND = `הרחב את המאמר הבא לאורך של 1000–1300 מילים בגוף המאמר. שמור על הכותרת, המבנה והסגנון.
+הוסף עומק אמיתי: הסברים, דוגמאות מעשיות, שלבים, טבלת השוואה אם רלוונטי, וטעויות נפוצות. בלי חזרות ובלי מילוי ריק.
+עדיין אסור להמציא עובדות, מחירים או נתונים: מה שחסר מסמנים [לבדיקה: ...]. החזר את אותו מבנה JSON בדיוק.`;
+
+/** Writes (or rewrites) one article. Uses Claude when an Anthropic key exists, otherwise OpenAI. Expands drafts that come back too short. */
+export async function generateArticle(input: ArticleInput): Promise<Draft & { model: string }> {
+  const first = await callModel(SYSTEM, userPrompt(input));
+  let draft = parseDraft(first.text);
+  for (let i = 0; i < 2 && wordCount(draft.bodyMd) < MIN_WORDS; i++) {
+    const more = await callModel(SYSTEM, `${EXPAND}\n\nהמאמר (${wordCount(draft.bodyMd)} מילים כרגע):\n${JSON.stringify(draft)}`);
+    try {
+      const next = parseDraft(more.text);
+      if (wordCount(next.bodyMd) > wordCount(draft.bodyMd)) draft = next;
+    } catch {
+      break;
+    }
+  }
+  return { ...draft, model: first.model };
 }
 
 /** Article + FAQPage JSON-LD for the page head. */

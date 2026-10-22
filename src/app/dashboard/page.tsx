@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getSiteReport, ENGINES, ENGINE_LABEL, type Cell } from "@/lib/geo/report";
 import { latestAudit } from "@/lib/audit/run";
 import type { CheckStatus } from "@/lib/audit/geo-audit";
@@ -103,6 +104,8 @@ export default async function Dashboard({
   searchParams: Promise<{ site?: string; org?: string; msg?: string; welcome?: string }>;
 }) {
   const { site, org, msg, welcome } = await searchParams;
+  // No site picked → the all-sites overview is the home screen.
+  if (!site && !welcome) redirect(`/dashboard/overview${org ? `?org=${org}` : ""}`);
   const ctx = await getOrgContext(org);
   const r = await getSiteReport(ctx.db, site, ctx.org.id);
 

@@ -123,7 +123,7 @@ export async function setArticleStatus(f: FormData) {
   if (!["draft", "approved", "rejected"].includes(status)) redirect(itemUrl(id, org));
   const db = await supabaseUser();
   const { error } = await db.from("content_items").update({ status }).eq("id", id);
-  const label = status === "approved" ? "אושר. כשנחבר את WordPress הוא יוכל להתפרסם בלחיצה." : status === "rejected" ? "נדחה." : "הוחזר לטיוטה.";
+  const label = status === "approved" ? "אושר. עכשיו אפשר לשלוח ל-WordPress, לפרסם או לתזמן." : status === "rejected" ? "נדחה." : "הוחזר לטיוטה.";
   redirect(itemUrl(id, org, error ? "השינוי נכשל." : label));
 }
 
@@ -132,4 +132,64 @@ export async function deleteArticle(f: FormData) {
   const { data: item } = await db.from("content_items").select("site_id").eq("id", str(f, "id")).maybeSingle();
   await db.from("content_items").delete().eq("id", str(f, "id"));
   redirect(listUrl(str(f, "org_id"), item?.site_id ?? "", "המאמר נמחק."));
+}
+
+/** "2026-10-25T09:00" in Israel time → UTC ISO string. */
+function israelLocalToUtc(local: string): string | null {
+  const m = local.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+  if (!m) return null;
+  const asUtc = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  const tzPart = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Jerusalem", timeZoneName: "longOffset" })
+    .formatToParts(new Date(asUtc)).find((p) => p.type === "timeZoneName")?.value ?? "GMT+02:00";
+  const off = tzPart.match(/GMT([+-])(\d{2}):?(\d{2})?/);
+  const minutes = off ? (off[1] === "-" ? -1 : 1) * (+off[2] * 60 + +(off[3] ?? 0)) : 120;
+  return new Date(asUtc - minutes * 60_000).toISOString();
+}
+
+export async function publishToWordPress(f: FormData) {
+  const id = str(f, "id");
+  const org = str(f, "org_id");
+  const mode = str(f, "mode") as "draft" | "publish" | "future";
+  if (!["draft", "publish", "future"].includes(mode)) redirect(itemUrl(id, org));
+
+  // Access through the user's client: the article must belong to their org and be approved.
+  const db = await supabaseUser();
+  const { data: item } = await db.from("content_items")
+    .select("id, site_id, status, title, slug, meta_description, body_md, schema_jsonld, wp_post_id").eq("id", id).maybeSingle();
+  if (!item) redirect(itemUrl(id, org, "המאמר לא נמצא."));
+  if (item.status !== "approved" && item.status !== "published") redirect(itemUrl(id, org, "צריך לאשר את המאמר לפני שליחה ל-WordPress."));
+
+  let dateGmt: string | undefined;
+  if (mode === "future") {
+    dateGmt = israelLocalToUtc(str(f, "when")) ?? undefined;
+    if (!dateGmt || new Date(dateGmt).getTime() < Date.now() + 5 * 60_000) redirect(itemUrl(id, org, "בחרו תאריך ושעה עתידיים (לפחות 5 דקות קדימה)."));
+  }
+
+  const admin = supabaseAdmin();
+  const { data: conn } = await admin.from("wp_connections").select("wp_url, username, app_password_enc").eq("site_id", item.site_id).maybeSingle();
+  if (!conn) redirect(itemUrl(id, org, "עוד לא חיברתם WordPress לאתר הזה. מחברים בהגדרות."));
+
+  const { decrypt } = await import("@/lib/crypto");
+  const { upsertPost, wpErrorMessage } = await import("@/lib/wordpress");
+  const { renderMarkdown } = await import("@/lib/content/render");
+  const html = renderMarkdown(item.body_md) + (item.schema_jsonld ? `\n<script type="application/ld+json">${item.schema_jsonld}</script>` : "");
+
+  let msg = "";
+  try {
+    const post = await upsertPost(conn.wp_url, conn.username, decrypt(conn.app_password_enc), {
+      id: item.wp_post_id, title: item.title, html, excerpt: item.meta_description ?? "", slug: item.slug ?? "", status: mode, dateGmt,
+    });
+    await admin.from("content_items").update({
+      wp_post_id: post.id, wp_link: post.link, wp_status: post.status,
+      status: mode === "draft" ? "approved" : "published",
+      scheduled_for: mode === "future" ? dateGmt : null,
+      published_at: mode === "publish" ? new Date().toISOString() : null,
+    }).eq("id", id);
+    msg = mode === "draft" ? "נשלח ל-WordPress כטיוטה. אפשר להשלים שם תמונה וקטגוריה."
+      : mode === "future" ? `תוזמן לפרסום ב-${new Date(dateGmt!).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem" })}.`
+      : "פורסם באתר.";
+  } catch (e) {
+    msg = wpErrorMessage(e);
+  }
+  redirect(itemUrl(id, org, msg));
 }

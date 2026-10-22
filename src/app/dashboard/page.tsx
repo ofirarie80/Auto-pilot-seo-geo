@@ -105,7 +105,7 @@ export default async function Dashboard({
 }) {
   const { site, org, msg, welcome } = await searchParams;
   // No site picked → the all-sites overview is the home screen.
-  if (!site && !welcome) redirect(`/dashboard/overview${org ? `?org=${org}` : ""}`);
+  if (!site && !welcome) redirect(`/dashboard/manager${org ? `?org=${org}` : ""}`);
   const ctx = await getOrgContext(org);
   const r = await getSiteReport(ctx.db, site, ctx.org.id);
 

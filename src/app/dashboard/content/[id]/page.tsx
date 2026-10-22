@@ -28,7 +28,7 @@ function seoChecks(i: { title: string; meta_description: string | null; body_md:
   return [
     { label: "אורך כותרת", ok: t >= 30 && t <= 65, detail: `${t} תווים (מומלץ 30–65)` },
     { label: "תיאור מטא", ok: d >= 110 && d <= 160, detail: `${d} תווים (מומלץ 110–160)` },
-    { label: "אורך המאמר", ok: words >= 700, detail: `${words} מילים (מומלץ 700+)` },
+    { label: "אורך המאמר", ok: words >= 450 && words <= 850, detail: `${words} מילים (מומלץ 500–700)` },
     { label: "מבנה כותרות", ok: h2 >= 3, detail: `${h2} כותרות משנה` },
     { label: "תשובה ישירה בפתיחה", ok: firstPara.length > 80 && firstPara.length < 600, detail: firstPara ? `${firstPara.length} תווים בפסקה הראשונה` : "חסרה" },
     { label: "שאלות נפוצות + Schema", ok: i.faq.length >= 3, detail: `${i.faq.length} שאלות` },

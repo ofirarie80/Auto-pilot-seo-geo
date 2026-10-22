@@ -29,7 +29,7 @@ const SYSTEM = `אתה כותב תוכן SEO ו-GEO בעברית לעסק ישר
 - מבנה: כותרות ## ו-###, פסקאות קצרות, רשימות או טבלה כשזה עוזר להשוות.
 - להציג את העסק כאפשרות רלוונטית בצורה עניינית, לא כפרסומת. מותר להזכיר שיש גם חלופות.
 - אסור להמציא עובדות: לא מחירים, לא סטטיסטיקות, לא שנות ותק, לא שמות לקוחות. כשצריך נתון שאינך יודע, כתוב [לבדיקה: מה צריך להשלים].
-- בלי מילות מפתח דחוסות. אורך חובה: לפחות 1000 מילים בגוף המאמר (bodyMd), עד 1400. מאמר קצר יותר ייפסל.
+- בלי מילות מפתח דחוסות. אורך: 500–700 מילים בגוף המאמר (bodyMd). ממוקד ותמציתי, בלי מילוי.
 - בסוף: סעיף "## שאלות נפוצות" עם 4–6 שאלות ותשובות קצרות (הן יופיעו גם ב-faq).
 
 החזר JSON בלבד:
@@ -96,17 +96,17 @@ function parseDraft(text: string): Draft {
   };
 }
 
-const MIN_WORDS = 900;
+const MIN_WORDS = 450;
 
-const EXPAND = `הרחב את המאמר הבא לאורך של 1000–1300 מילים בגוף המאמר. שמור על הכותרת, המבנה והסגנון.
-הוסף עומק אמיתי: הסברים, דוגמאות מעשיות, שלבים, טבלת השוואה אם רלוונטי, וטעויות נפוצות. בלי חזרות ובלי מילוי ריק.
+const EXPAND = `הרחב את המאמר הבא לאורך של 550–700 מילים בגוף המאמר. שמור על הכותרת, המבנה והסגנון.
+הוסף עומק אמיתי במקום שחסר: הסבר, דוגמה מעשית או שלבים. בלי חזרות ובלי מילוי ריק.
 עדיין אסור להמציא עובדות, מחירים או נתונים: מה שחסר מסמנים [לבדיקה: ...]. החזר את אותו מבנה JSON בדיוק.`;
 
 /** Writes (or rewrites) one article. Uses Claude when an Anthropic key exists, otherwise OpenAI. Expands drafts that come back too short. */
 export async function generateArticle(input: ArticleInput): Promise<Draft & { model: string }> {
   const first = await callModel(SYSTEM, userPrompt(input));
   let draft = parseDraft(first.text);
-  for (let i = 0; i < 2 && wordCount(draft.bodyMd) < MIN_WORDS; i++) {
+  for (let i = 0; i < 1 && wordCount(draft.bodyMd) < MIN_WORDS; i++) {
     const more = await callModel(SYSTEM, `${EXPAND}\n\nהמאמר (${wordCount(draft.bodyMd)} מילים כרגע):\n${JSON.stringify(draft)}`);
     try {
       const next = parseDraft(more.text);

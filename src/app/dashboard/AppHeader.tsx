@@ -46,6 +46,10 @@ export default function AppHeader({
             {used.toLocaleString("he-IL")} / {quota.toLocaleString("he-IL")} תשובות החודש
           </span>
         )}
+        <Link href={`/dashboard?org=${ctx.org.id}${currentSite ? `&site=${currentSite}` : ""}`}
+          className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">נראות</Link>
+        <Link href={`/dashboard/content?org=${ctx.org.id}${currentSite ? `&site=${currentSite}` : ""}`}
+          className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">תוכן</Link>
         <Link href={`/dashboard/settings?org=${ctx.org.id}${currentSite ? `&site=${currentSite}` : ""}`}
           className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">הגדרות</Link>
         <form action={signOut}>

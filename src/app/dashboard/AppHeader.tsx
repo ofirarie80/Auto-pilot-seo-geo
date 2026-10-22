@@ -52,6 +52,8 @@ export default function AppHeader({
           className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">סקירה</Link>
         <Link href={`/dashboard?org=${ctx.org.id}&site=${currentSite ?? sites[0]?.id ?? ""}`}
           className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">נראות</Link>
+        <Link href={`/dashboard/crawl?org=${ctx.org.id}${currentSite ? `&site=${currentSite}` : ""}`}
+          className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">סריקת אתר</Link>
         <Link href={`/dashboard/content?org=${ctx.org.id}${currentSite ? `&site=${currentSite}` : ""}`}
           className="rounded-md px-3 py-2.5 text-[#C7D3DD] hover:text-white">תוכן</Link>
         <Link href={`/dashboard/settings?org=${ctx.org.id}${currentSite ? `&site=${currentSite}` : ""}`}

@@ -9,6 +9,7 @@ export type Plan = {
   monthly_answers: number;
   price_ils: number | null;
   gsc: boolean;
+  crawl_pages: number;
   monthly_articles: number;
 };
 

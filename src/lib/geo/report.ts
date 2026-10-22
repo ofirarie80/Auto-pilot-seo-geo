@@ -1,5 +1,5 @@
 import "server-only";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { hostOf } from "./analyze";
 import type { EngineId } from "./engines";
 
@@ -40,6 +40,7 @@ export type SiteReport = {
   prompts: { id: string; text: string; cells: Record<EngineId, Cell> }[];
   shareOfVoice: { name: string; rate: number; isSite: boolean }[];
   topCited: { domain: string; count: number }[];
+  history: { runId: string; at: string; answers: number; mentionRate: number; citationRate: number }[];
 };
 
 const pct = (n: number, d: number) => (d ? Math.round((1000 * n) / d) / 10 : 0);
@@ -64,15 +65,21 @@ function weekKey(iso: string) {
   return d.toISOString().slice(0, 10);
 }
 
-export async function getSiteReport(siteId?: string | null): Promise<SiteReport | null> {
-  const db = supabaseAdmin();
-  const { data: sites } = await db.from("sites").select("id, name, domain").eq("active", true).order("created_at");
+/**
+ * Report for one site. Pass the signed-in user's client from pages (RLS limits it to their data),
+ * or the admin client from the weekly job. `orgId` narrows the site list to one organization.
+ */
+export async function getSiteReport(db: SupabaseClient, siteId?: string | null, orgId?: string | null): Promise<SiteReport | null> {
+  let q = db.from("sites").select("id, name, domain, org_id").eq("active", true).order("created_at");
+  if (orgId) q = q.eq("org_id", orgId);
+  else if (siteId) q = q.eq("id", siteId);
+  const { data: sites } = await q;
   if (!sites?.length) return null;
   const site = sites.find((s) => s.id === siteId) ?? sites[0];
 
   const [{ data: runs }, { data: prompts }, { data: comps }] = await Promise.all([
     db.from("geo_runs").select("id, finished_at").eq("site_id", site.id).eq("status", "done")
-      .order("started_at", { ascending: false }).limit(2),
+      .order("started_at", { ascending: false }).limit(12),
     db.from("prompts").select("id, text").eq("site_id", site.id).eq("active", true).order("created_at"),
     db.from("competitors").select("name").eq("site_id", site.id),
   ]);
@@ -131,9 +138,16 @@ export async function getSiteReport(siteId?: string | null): Promise<SiteReport 
   const topCited = [...domains.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
     .map(([domain, count]) => ({ domain, count }));
 
+  const history = (runs ?? []).map((run) => {
+    const rs = rows.filter((x) => x.run_id === run.id);
+    const sm = summarize(rs);
+    return { runId: run.id, at: run.finished_at ?? "", answers: sm.n, mentionRate: sm.mentionRate, citationRate: sm.citationRate };
+  }).filter((h) => h.answers > 0);
+
   return {
-    site,
-    sites,
+    site: { id: site.id, name: site.name, domain: site.domain },
+    sites: sites.map((x) => ({ id: x.id, name: x.name, domain: x.domain })),
+    history,
     hasData: latest.length > 0,
     runAt: runs?.[0]?.finished_at ?? null,
     answers: now.n,

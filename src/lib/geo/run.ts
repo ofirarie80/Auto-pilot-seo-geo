@@ -21,6 +21,7 @@ export type RunSummary = {
   errors: number;
   mentionRate: number;
   citationRate: number;
+  skippedForQuota: number;
 };
 
 /** One GEO run for one site: every active prompt × every configured engine. */
@@ -29,10 +30,12 @@ export async function runSite(siteId: string): Promise<RunSummary> {
 
   const { data: site, error: siteErr } = await db
     .from("sites")
-    .select("id, name, domain, brand_terms")
+    .select("id, name, domain, brand_terms, org_id, organizations(plan, plans(engines, monthly_answers))")
     .eq("id", siteId)
     .single();
   if (siteErr || !site) throw new Error(`Site not found: ${siteId}`);
+  const orgPlan = (site.organizations as unknown as { plans: { engines: string[]; monthly_answers: number } | null } | null)?.plans;
+  if (!orgPlan) throw new Error(`No plan for site ${site.name}`);
 
   const [{ data: prompts }, { data: comps }] = await Promise.all([
     db.from("prompts").select("id, text").eq("site_id", siteId).eq("active", true),
@@ -41,8 +44,12 @@ export async function runSite(siteId: string): Promise<RunSummary> {
 
   if (!prompts?.length) throw new Error(`No active prompts for ${site.name}`);
 
-  const engines = enabledEngines();
-  if (!engines.length) throw new Error("No AI engine API keys configured");
+  // Plan limits: only the engines the plan includes, and only what is left of the monthly quota.
+  const engines = enabledEngines().filter((e) => orgPlan.engines.includes(e));
+  if (!engines.length) throw new Error("No AI engine available for this plan (missing API key or not included)");
+  const { data: usage } = await db.from("org_usage").select("answers_this_month").eq("org_id", site.org_id).maybeSingle();
+  const remaining = orgPlan.monthly_answers - Number(usage?.answers_this_month ?? 0);
+  if (remaining <= 0) throw new Error("quota_exhausted");
 
   const { data: run, error: runErr } = await db
     .from("geo_runs")
@@ -58,7 +65,8 @@ export async function runSite(siteId: string): Promise<RunSummary> {
     terms: c.brand_terms ?? [],
   }));
 
-  const jobs = (prompts ?? []).flatMap((p) => engines.map((e) => ({ p, e })));
+  const allJobs = (prompts ?? []).flatMap((p) => engines.map((e) => ({ p, e })));
+  const jobs = allJobs.slice(0, remaining);
   let ok = 0, errors = 0, mentioned = 0, cited = 0;
 
   await pool(jobs, Number(process.env.GEO_CONCURRENCY ?? 4), async ({ p, e }) => {
@@ -96,5 +104,8 @@ export async function runSite(siteId: string): Promise<RunSummary> {
     .eq("id", run.id);
 
   const pct = (n: number) => (ok ? Math.round((1000 * n) / ok) / 10 : 0);
-  return { runId: run.id, site: site.name, engines, answers: ok, errors, mentionRate: pct(mentioned), citationRate: pct(cited) };
+  return {
+    runId: run.id, site: site.name, engines, answers: ok, errors,
+    mentionRate: pct(mentioned), citationRate: pct(cited), skippedForQuota: allJobs.length - jobs.length,
+  };
 }

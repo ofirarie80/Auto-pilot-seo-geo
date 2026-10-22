@@ -1,47 +1,94 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { redirect } from "next/navigation";
+import { supabaseUser } from "@/lib/supabase/server";
+import { planLimitMessage } from "@/lib/plans";
+import { cleanDomain } from "@/lib/domain";
+import { runAudit } from "@/lib/audit/run";
 
-// These actions live under /dashboard, which the middleware password-protects.
+// Every write goes through the signed-in user's client: RLS rejects anything outside their organization,
+// and database triggers enforce the plan's limits.
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const terms = (s: string) => s.split(/[,،\n]/).map((t) => t.trim()).filter(Boolean);
-const done = () => revalidatePath("/dashboard/settings");
+
+function back(f: FormData, msg?: string): never {
+  const q = new URLSearchParams();
+  if (str(f, "org_id")) q.set("org", str(f, "org_id"));
+  if (str(f, "site_id")) q.set("site", str(f, "site_id"));
+  if (msg) q.set("msg", msg);
+  revalidatePath("/dashboard/settings");
+  redirect(`/dashboard/settings?${q}`);
+}
+
+const failed = (m?: string) => planLimitMessage(m) ?? "השמירה נכשלה. נסו שוב.";
+
+export async function addSite(f: FormData) {
+  const domain = cleanDomain(str(f, "domain"));
+  const name = str(f, "name");
+  if (!domain || !name) back(f, "צריך שם מותג וכתובת אתר תקינה.");
+  const db = await supabaseUser();
+  const { data, error } = await db
+    .from("sites")
+    .insert({ org_id: str(f, "org_id"), name, domain, brand_terms: [name] })
+    .select("id")
+    .single();
+  if (error || !data) back(f, failed(error?.message));
+  await runAudit(data.id).catch(() => null);
+  f.set("site_id", data.id);
+  back(f, "האתר נוסף. עכשיו מוסיפים לו שאלות.");
+}
 
 export async function addPrompt(f: FormData) {
-  const site_id = str(f, "site_id");
   const text = str(f, "text");
-  if (!site_id || text.length < 5) return;
-  await supabaseAdmin().from("prompts").insert({ site_id, text, topic: str(f, "topic") || null });
-  done();
+  if (text.length < 5) back(f, "השאלה קצרה מדי.");
+  const db = await supabaseUser();
+  const { error } = await db.from("prompts").insert({ site_id: str(f, "site_id"), text, topic: str(f, "topic") || null });
+  back(f, error ? failed(error.message) : undefined);
 }
 
 export async function togglePrompt(f: FormData) {
-  await supabaseAdmin().from("prompts").update({ active: str(f, "active") !== "true" }).eq("id", str(f, "id"));
-  done();
+  const db = await supabaseUser();
+  const { error } = await db.from("prompts").update({ active: str(f, "active") !== "true" }).eq("id", str(f, "id"));
+  back(f, error ? failed(error.message) : undefined);
 }
 
 export async function deletePrompt(f: FormData) {
-  await supabaseAdmin().from("prompts").delete().eq("id", str(f, "id"));
-  done();
+  const db = await supabaseUser();
+  await db.from("prompts").delete().eq("id", str(f, "id"));
+  back(f);
 }
 
 export async function addCompetitor(f: FormData) {
-  const site_id = str(f, "site_id");
   const name = str(f, "name");
-  if (!site_id || !name) return;
-  const domain = str(f, "domain").replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "") || null;
-  await supabaseAdmin().from("competitors").insert({ site_id, name, domain, brand_terms: terms(str(f, "terms")) });
-  done();
+  if (!name) back(f, "צריך שם מתחרה.");
+  const domain = cleanDomain(str(f, "domain"));
+  const db = await supabaseUser();
+  const { error } = await db
+    .from("competitors")
+    .insert({ site_id: str(f, "site_id"), name, domain, brand_terms: terms(str(f, "terms")) });
+  back(f, error ? failed(error.message) : undefined);
 }
 
 export async function deleteCompetitor(f: FormData) {
-  await supabaseAdmin().from("competitors").delete().eq("id", str(f, "id"));
-  done();
+  const db = await supabaseUser();
+  await db.from("competitors").delete().eq("id", str(f, "id"));
+  back(f);
 }
 
 export async function updateBrandTerms(f: FormData) {
-  await supabaseAdmin().from("sites").update({ brand_terms: terms(str(f, "terms")) }).eq("id", str(f, "id"));
-  done();
+  const db = await supabaseUser();
+  const { error } = await db.from("sites").update({ brand_terms: terms(str(f, "terms")) }).eq("id", str(f, "site_id"));
+  back(f, error ? failed(error.message) : "נשמר.");
+}
+
+export async function updateNotifications(f: FormData) {
+  const db = await supabaseUser();
+  const phone = str(f, "whatsapp_to").replace(/\D/g, "").replace(/^0/, "972");
+  const { error } = await db
+    .from("organizations")
+    .update({ notify_email: f.get("notify_email") === "on", whatsapp_to: phone || null })
+    .eq("id", str(f, "org_id"));
+  back(f, error ? "רק בעלי החשבון יכולים לשנות את ההגדרות האלה." : "נשמר.");
 }

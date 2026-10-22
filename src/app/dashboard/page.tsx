@@ -2,8 +2,12 @@ import Link from "next/link";
 import { getSiteReport, ENGINES, ENGINE_LABEL, type Cell } from "@/lib/geo/report";
 import { latestAudit } from "@/lib/audit/run";
 import type { CheckStatus } from "@/lib/audit/geo-audit";
+import { getOrgContext, type OrgContext } from "@/lib/auth";
+import AppHeader from "./AppHeader";
+import { runNow } from "./actions";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 export const metadata = { title: "דשבורד · Lionet Pilot" };
 
 const card = "rounded-[10px] border border-[#DCE2E8] bg-white p-5 dark:border-white/10 dark:bg-[#17212B]";
@@ -30,8 +34,8 @@ const STATUS: Record<CheckStatus, { label: string; cls: string }> = {
   fail: { label: "בעיה", cls: "bg-[#FDE8E6] text-[#B42318]" },
 };
 
-async function AuditSection({ siteId }: { siteId: string }) {
-  const a = await latestAudit(siteId);
+async function AuditSection({ db, siteId }: { db: OrgContext["db"]; siteId: string }) {
+  const a = await latestAudit(db, siteId);
   const ordered = a ? [...a.checks].sort((x, y) => ["fail", "warn", "pass"].indexOf(x.status) - ["fail", "warn", "pass"].indexOf(y.status)) : [];
   return (
     <section className={`${card} flex flex-col gap-4`}>
@@ -92,12 +96,25 @@ function Trend({ points }: { points: { week: string; rate: number }[] }) {
   );
 }
 
-export default async function Dashboard({ searchParams }: { searchParams: Promise<{ site?: string }> }) {
-  const { site } = await searchParams;
-  const r = await getSiteReport(site);
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ site?: string; org?: string; msg?: string; welcome?: string }>;
+}) {
+  const { site, org, msg, welcome } = await searchParams;
+  const ctx = await getOrgContext(org);
+  const r = await getSiteReport(ctx.db, site, ctx.org.id);
 
   if (!r) {
-    return <main className="mx-auto max-w-2xl px-4 py-16">אין עדיין אתרים במערכת.</main>;
+    return (
+      <div className="min-h-screen">
+        <AppHeader ctx={ctx} sites={[]} />
+        <main className="mx-auto max-w-2xl px-4 py-16">
+          <p className="mb-4">אין עדיין אתרים בחשבון.</p>
+          <Link href={`/dashboard/settings?org=${ctx.org.id}`} className="text-accent underline">הוספת אתר</Link>
+        </main>
+      </div>
+    );
   }
 
   const leader = r.shareOfVoice.find((c) => !c.isSite);
@@ -110,29 +127,17 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   return (
     <div className="min-h-screen">
-      <header className="flex flex-wrap items-center gap-x-7 gap-y-3 bg-[#13212E] px-4 py-3.5 text-white sm:px-8">
-        <div className="flex items-baseline gap-2.5">
-          <span className="text-xl font-semibold">Lionet Pilot</span>
-          <span className="font-mono text-[11px] tracking-widest text-[#9FB3C3]">SEO + GEO</span>
-        </div>
-        <nav aria-label="אתרים" className="flex flex-wrap gap-1">
-          {r.sites.map((s) => (
-            <Link
-              key={s.id}
-              href={`/dashboard?site=${s.id}`}
-              className={`rounded-md px-3.5 py-2.5 text-sm ${s.id === r.site.id ? "bg-[#22384A] font-medium text-white" : "text-[#C7D3DD] hover:text-white"}`}
-            >
-              {s.name}
-            </Link>
-          ))}
-        </nav>
-        <Link href={`/dashboard/settings?site=${r.site.id}`} className="ms-auto rounded-md px-3.5 py-2.5 text-sm text-[#C7D3DD] hover:text-white">
-          הגדרות
-        </Link>
-      </header>
+      <AppHeader ctx={ctx} sites={r.sites} currentSite={r.site.id} />
 
       <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-4 pb-12 pt-7 sm:px-8">
-        <div className="flex flex-col gap-1">
+        {welcome && (
+          <p role="status" className="rounded-lg border border-accent bg-[#E0F1F2] p-4 text-[#23404A]">
+            החשבון מוכן. סרקנו את האתר והכנו שאלות ראשונות. אפשר לערוך אותן בהגדרות, ואז להריץ בדיקה.
+          </p>
+        )}
+        {msg && <p role="status" className="rounded-lg border border-[#DCE2E8] bg-white p-4 dark:bg-[#17212B]">{msg}</p>}
+        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h1 className="text-[28px] font-semibold">נראות ב-AI · {r.site.name}</h1>
           <p className="text-sm text-muted">
             {r.hasData
@@ -140,8 +145,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
               : "עוד לא רצה בדיקה לאתר הזה."}
           </p>
         </div>
+        <form action={runNow}>
+          <input type="hidden" name="site_id" value={r.site.id} />
+          <input type="hidden" name="org_id" value={ctx.org.id} />
+          <button className="min-h-11 rounded-lg bg-accent px-5 text-sm font-semibold text-white">הרצת בדיקה עכשיו</button>
+        </form>
+        </div>
 
-        <AuditSection siteId={r.site.id} />
+        <AuditSection db={ctx.db} siteId={r.site.id} />
 
         {!r.hasData ? (
           <section className={card}>
@@ -247,6 +258,31 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 </section>
               </div>
             </div>
+            <section className={`${card} flex flex-col gap-3`}>
+              <h2 className="text-[17px] font-semibold">דוחות קודמים</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[420px] border-collapse text-sm">
+                  <thead>
+                    <tr className="text-right text-xs text-muted">
+                      <th className="border-b border-[#DCE2E8] px-2.5 py-2 font-medium">תאריך</th>
+                      <th className="border-b border-[#DCE2E8] px-2.5 py-2 font-medium">תשובות</th>
+                      <th className="border-b border-[#DCE2E8] px-2.5 py-2 font-medium">אזכור</th>
+                      <th className="border-b border-[#DCE2E8] px-2.5 py-2 font-medium">ציטוט</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {r.history.map((h) => (
+                      <tr key={h.runId}>
+                        <td className="border-b border-[#EEF1F4] p-2.5 dark:border-white/5">{h.at ? new Date(h.at).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem" }) : "—"}</td>
+                        <td className="border-b border-[#EEF1F4] p-2.5 tabular-nums dark:border-white/5">{h.answers}</td>
+                        <td className="border-b border-[#EEF1F4] p-2.5 tabular-nums dark:border-white/5">{h.mentionRate}%</td>
+                        <td className="border-b border-[#EEF1F4] p-2.5 tabular-nums dark:border-white/5">{h.citationRate}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
           </>
         )}
       </main>

@@ -1,25 +1,36 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
-/**
- * Password-protects the dashboard with HTTP Basic Auth until real user login exists.
- * Set DASHBOARD_PASSWORD in Vercel (any username works). Without it the dashboard is closed.
- */
-export function middleware(req: NextRequest) {
-  const password = process.env.DASHBOARD_PASSWORD;
-  const auth = req.headers.get("authorization") ?? "";
-  if (password && auth.startsWith("Basic ")) {
-    try {
-      const decoded = atob(auth.slice(6));
-      const pass = decoded.slice(decoded.indexOf(":") + 1);
-      if (pass === password) return NextResponse.next();
-    } catch {
-      /* fall through */
-    }
-  }
-  return new NextResponse(password ? "נדרשת סיסמה" : "יש להגדיר DASHBOARD_PASSWORD ב-Vercel", {
-    status: 401,
-    headers: password ? { "WWW-Authenticate": 'Basic realm="Lionet Pilot", charset="UTF-8"' } : {},
+/** Refreshes the Supabase session cookie on every request and guards the signed-in area. */
+export async function middleware(req: NextRequest) {
+  let res = NextResponse.next({ request: req });
+  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll: () => req.cookies.getAll(),
+      setAll: (list) => {
+        list.forEach(({ name, value }) => req.cookies.set(name, value));
+        res = NextResponse.next({ request: req });
+        list.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
+      },
+    },
   });
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const path = req.nextUrl.pathname;
+  const protectedPath = path.startsWith("/dashboard") || path.startsWith("/onboarding");
+  if (protectedPath && !user) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = `?next=${encodeURIComponent(path + req.nextUrl.search)}`;
+    return NextResponse.redirect(url);
+  }
+  if (path === "/login" && user) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+  return res;
 }
 
-export const config = { matcher: ["/dashboard/:path*"] };
+export const config = { matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/auth/:path*"] };

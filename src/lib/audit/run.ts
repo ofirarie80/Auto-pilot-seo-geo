@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { auditSite, type AuditResult, type Check } from "./geo-audit";
 
@@ -11,8 +12,8 @@ export async function runAudit(siteId: string): Promise<AuditResult & { site: st
   return { ...result, site: site.name };
 }
 
-export async function latestAudit(siteId: string) {
-  const { data } = await supabaseAdmin()
+export async function latestAudit(db: SupabaseClient, siteId: string) {
+  const { data } = await db
     .from("site_audits")
     .select("score, checks, created_at")
     .eq("site_id", siteId)

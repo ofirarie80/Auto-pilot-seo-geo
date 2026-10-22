@@ -17,7 +17,7 @@ export async function middleware(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const path = req.nextUrl.pathname;
-  const protectedPath = path.startsWith("/dashboard") || path.startsWith("/onboarding");
+  const protectedPath = path.startsWith("/dashboard") || path.startsWith("/onboarding") || path.startsWith("/reset-password");
   if (protectedPath && !user) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
@@ -33,4 +33,4 @@ export async function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { matcher: ["/dashboard/:path*", "/onboarding/:path*", "/login", "/auth/:path*"] };
+export const config = { matcher: ["/dashboard/:path*", "/onboarding/:path*", "/reset-password", "/login", "/auth/:path*"] };

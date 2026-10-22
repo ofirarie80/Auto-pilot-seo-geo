@@ -157,11 +157,17 @@ export async function auditSite(domain: string): Promise<AuditResult> {
       detail: `${h1s} כותרות H1 בעמוד הבית`,
       fix: h1s === 1 ? undefined : "עמוד הבית צריך H1 אחד שאומר במפורש מה העסק.",
     });
+    // Language must match the page's actual text: a Hebrew site marked lang="en" confuses search and AI engines.
+    const text = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<[^>]+>/gi, " ");
+    const hebrew = (text.match(/[\u0590-\u05FF]/g) ?? []).length;
+    const latin = (text.match(/[A-Za-z]/g) ?? []).length;
+    const looksHebrew = hebrew > latin * 0.5 && hebrew > 200;
+    const langOk = !!lang && (!looksHebrew || /^(he|iw)/i.test(lang));
     add({
-      id: "lang", title: "שפת העמוד מוגדרת", weight: 3,
-      status: lang ? "pass" : "warn",
-      detail: lang ? `lang="${lang}"` : "חסר lang",
-      fix: lang ? undefined : 'להוסיף lang="he" לתגית html.',
+      id: "lang", title: "שפת העמוד מוגדרת נכון", weight: 4,
+      status: langOk ? "pass" : "warn",
+      detail: !lang ? "חסר lang" : langOk ? `lang="${lang}"` : `lang="${lang}" אבל תוכן העמוד בעברית`,
+      fix: langOk ? undefined : 'להגדיר lang="he-IL" בתגית html (ב-WordPress: הגדרות ← כללי ← שפת האתר: עברית).',
     });
     add({
       id: "schema-org", title: "Schema של העסק", weight: 15,

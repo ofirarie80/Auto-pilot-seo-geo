@@ -2,6 +2,7 @@ import { getOrgContext } from "@/lib/auth";
 import AppHeader from "../AppHeader";
 import {
   addSite, addPrompt, togglePrompt, deletePrompt, addCompetitor, deleteCompetitor, updateBrandTerms, updateNotifications,
+  setGscProperty, syncGscNow, disconnectGoogle,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,10 @@ export default async function Settings({
   const { db, plan } = ctx;
 
   const { data: sites } = await db
-    .from("sites").select("id, name, domain, brand_terms").eq("org_id", ctx.org.id).order("created_at");
+    .from("sites").select("id, name, domain, brand_terms, gsc_property, gsc_synced_at").eq("org_id", ctx.org.id).order("created_at");
+  const { data: google } = await db
+    .from("google_connections").select("google_email, properties, updated_at").eq("org_id", ctx.org.id).maybeSingle();
+  const planHasGsc = plan.gsc === true;
   const site = sites?.find((s) => s.id === siteParam) ?? sites?.[0];
 
   const [{ data: prompts }, { data: comps }] = site
@@ -136,6 +140,56 @@ export default async function Settings({
             </section>
           </>
         )}
+
+        <section className={`${card} flex flex-col gap-3`}>
+          <h2 className="text-[17px] font-semibold">Google Search Console</h2>
+          {!planHasGsc ? (
+            <p className="text-sm text-muted">נתוני גוגל (קליקים, חשיפות, מילים ועמודים שירדו) כלולים במסלולי Pro ומעלה.</p>
+          ) : !google ? (
+            <>
+              <p className="text-sm text-muted">מחברים פעם אחת את חשבון הגוגל שבו מנוהל ה-Search Console, והמערכת מושכת את הנתונים כל שבוע. הגישה היא לקריאה בלבד.</p>
+              {isOwner && (
+                <a href={`/api/google/connect?org=${ctx.org.id}`} className={`${btn} inline-flex items-center self-start`}>חיבור Google</a>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-sm">
+                מחובר: <b dir="ltr">{google.google_email ?? "חשבון Google"}</b> · {google.properties.length} נכסים
+              </p>
+              {site && (
+                <form action={setGscProperty} className="flex flex-wrap items-end gap-2">
+                  {hidden}
+                  <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
+                    הנכס של {site.name} ב-Search Console
+                    <select name="gsc_property" defaultValue={site.gsc_property ?? ""} disabled={!isOwner} className={input} dir="ltr">
+                      <option value="">— לא מקושר —</option>
+                      {google.properties.map((p: string) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </label>
+                  {isOwner && <button className={btn}>שמירה</button>}
+                </form>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {site?.gsc_property && (
+                  <form action={syncGscNow}>
+                    {hidden}
+                    <button className={ghost}>עדכון נתונים עכשיו</button>
+                  </form>
+                )}
+                {isOwner && (
+                  <form action={disconnectGoogle}>
+                    {hidden}
+                    <button className={ghost}>ניתוק Google</button>
+                  </form>
+                )}
+              </div>
+              {site?.gsc_synced_at && (
+                <p className="text-xs text-muted">עודכן לאחרונה: {new Date(site.gsc_synced_at).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem" })}</p>
+              )}
+            </>
+          )}
+        </section>
 
         <section className={`${card} flex flex-col gap-3`}>
           <h2 className="text-[17px] font-semibold">הוספת אתר</h2>

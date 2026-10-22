@@ -5,6 +5,8 @@ import { getSiteReport, reportText } from "@/lib/geo/report";
 import { sendWhatsApp } from "@/lib/notify/whatsapp";
 import { sendEmail, reportEmailHtml } from "@/lib/notify/email";
 import { runAudit } from "@/lib/audit/run";
+import { syncSite as syncGsc } from "@/lib/google/sync";
+import { getGscReport } from "@/lib/google/report";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // seconds — AI answers with web search are slow
@@ -28,7 +30,7 @@ export async function GET(req: Request) {
 
   const db = supabaseAdmin();
   const siteParam = url.searchParams.get("site");
-  let q = db.from("sites").select("id, org_id, organizations(id, name, plan, notify_email, whatsapp_to)").eq("active", true);
+  let q = db.from("sites").select("id, name, gsc_property, org_id, organizations(id, name, plan, notify_email, whatsapp_to)").eq("active", true);
   if (siteParam) q = q.eq("id", siteParam);
   const { data: sites, error } = await q;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -40,6 +42,15 @@ export async function GET(req: Request) {
       const lines: string[] = [];
       const audit = await runAudit(s.id).catch(() => null);
       if (audit) lines.push(`🛠️ ${audit.site} · ציון טכני ל-AI: ${audit.score}/100`);
+      if (s.gsc_property) {
+        const ok = await syncGsc(s.id).then(() => true).catch(() => false);
+        const g = ok ? await getGscReport(db, s.id, null) : null;
+        if (g) {
+          const pct = g.totals.prevClicks ? Math.round(((g.totals.clicks - g.totals.prevClicks) / g.totals.prevClicks) * 100) : null;
+          lines.push(`🔎 ${s.name} בגוגל (28 יום): ${g.totals.clicks.toLocaleString("he-IL")} קליקים${pct != null ? ` (${pct >= 0 ? "▲" : "▼"}${Math.abs(pct)}%)` : ""}` +
+            (g.losingPages[0] ? ` · העמוד שירד הכי הרבה: ${g.losingPages[0].key}` : ""));
+        }
+      }
       try {
         const summary = await runSite(s.id);
         const report = await getSiteReport(db, s.id);

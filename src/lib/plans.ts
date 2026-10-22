@@ -8,6 +8,7 @@ export type Plan = {
   engines: EngineId[];
   monthly_answers: number;
   price_ils: number | null;
+  gsc: boolean;
 };
 
 /** Human message for a database plan-limit error, or null if it is some other error. */

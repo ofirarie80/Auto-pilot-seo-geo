@@ -92,3 +92,46 @@ export async function updateNotifications(f: FormData) {
     .eq("id", str(f, "org_id"));
   back(f, error ? "רק בעלי החשבון יכולים לשנות את ההגדרות האלה." : "נשמר.");
 }
+
+// ───────── Google Search Console ─────────
+
+export async function setGscProperty(f: FormData) {
+  const { canManageGoogle } = await import("@/lib/google/access");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const orgId = str(f, "org_id");
+  const access = await canManageGoogle(orgId);
+  if (!access.ok) back(f, "רק בעלי החשבון יכולים לשנות את זה.");
+  const prop = str(f, "gsc_property");
+  const admin = supabaseAdmin();
+  const { data: conn } = await admin.from("google_connections").select("properties").eq("org_id", orgId).maybeSingle();
+  if (prop && !conn?.properties?.includes(prop)) back(f, "הנכס הזה לא שייך לחשבון הגוגל המחובר.");
+  // Update through the user's client so RLS confirms the site belongs to this org.
+  const db = await supabaseUser();
+  const { error } = await db.from("sites").update({ gsc_property: prop || null }).eq("id", str(f, "site_id")).eq("org_id", orgId);
+  if (error) back(f, "השמירה נכשלה.");
+  if (prop) {
+    const { syncSite } = await import("@/lib/google/sync");
+    await syncSite(str(f, "site_id")).catch(() => null);
+  }
+  back(f, prop ? "נשמר, והנתונים מגוגל נמשכו." : "הקישור לנכס הוסר.");
+}
+
+export async function syncGscNow(f: FormData) {
+  const db = await supabaseUser();
+  const { data: site } = await db.from("sites").select("id, gsc_synced_at").eq("id", str(f, "site_id")).maybeSingle();
+  if (!site) back(f, "האתר לא נמצא.");
+  if (site.gsc_synced_at && Date.now() - new Date(site.gsc_synced_at).getTime() < 10 * 60_000) back(f, "הנתונים עודכנו לפני פחות מעשר דקות.");
+  const { syncSite } = await import("@/lib/google/sync");
+  const r = await syncSite(site.id).catch((e) => (e instanceof Error ? e.message : "error"));
+  back(f, typeof r === "string" ? "משיכת הנתונים מגוגל נכשלה. נסו לחבר מחדש את Google." : "הנתונים מגוגל עודכנו.");
+}
+
+export async function disconnectGoogle(f: FormData) {
+  const { canManageGoogle } = await import("@/lib/google/access");
+  const { supabaseAdmin } = await import("@/lib/supabase/admin");
+  const orgId = str(f, "org_id");
+  const access = await canManageGoogle(orgId);
+  if (!access.ok) back(f, "רק בעלי החשבון יכולים לנתק.");
+  await supabaseAdmin().from("google_connections").delete().eq("org_id", orgId);
+  back(f, "Google נותק.");
+}

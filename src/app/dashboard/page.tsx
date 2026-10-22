@@ -4,6 +4,7 @@ import { latestAudit } from "@/lib/audit/run";
 import type { CheckStatus } from "@/lib/audit/geo-audit";
 import { getOrgContext, type OrgContext } from "@/lib/auth";
 import AppHeader from "./AppHeader";
+import GoogleSection from "./GoogleSection";
 import { runNow } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -153,6 +154,8 @@ export default async function Dashboard({
         </div>
 
         <AuditSection db={ctx.db} siteId={r.site.id} />
+
+        <GoogleSection ctx={ctx} siteId={r.site.id} />
 
         {!r.hasData ? (
           <section className={card}>

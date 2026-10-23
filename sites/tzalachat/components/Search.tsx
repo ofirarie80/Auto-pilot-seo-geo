@@ -19,23 +19,28 @@ export default function Search({ items }: { items: Item[] }) {
       })
       .filter((x) => x.score < 9)
       .sort((a, b) => a.score - b.score || a.it.name.length - b.it.name.length)
-      .slice(0, 7)
+      .slice(0, 8)
       .map((x) => x.it);
   }, [q, items]);
   const go = (slug: string) => router.push(`/food/${slug}`);
   return (
     <div className="search" role="search">
-      <label htmlFor="food-q">כמה קלוריות יש ב...</label>
-      <input
-        id="food-q" type="search" autoComplete="off" placeholder="פיתה, ביצה, אבוקדו..." value={q}
-        role="combobox" aria-expanded={results.length > 0} aria-controls="food-results" aria-autocomplete="list"
-        onChange={(e) => { setQ(e.target.value); setSel(0); }}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(s + 1, results.length - 1)); }
-          if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(s - 1, 0)); }
-          if (e.key === "Enter" && results[sel]) go(results[sel].slug);
-        }}
-      />
+      <div className="field">
+        <input
+          id="food-q" type="search" autoComplete="off" placeholder="חפשו מאכל: פיתה, ביצה, אבוקדו..." value={q}
+          aria-label="חיפוש מאכל"
+          role="combobox" aria-expanded={results.length > 0} aria-controls="food-results" aria-autocomplete="list"
+          onChange={(e) => { setQ(e.target.value); setSel(0); }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown") { e.preventDefault(); setSel((s) => Math.min(s + 1, results.length - 1)); }
+            if (e.key === "ArrowUp") { e.preventDefault(); setSel((s) => Math.max(s - 1, 0)); }
+            if (e.key === "Enter" && results[sel]) go(results[sel].slug);
+          }}
+        />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+        </svg>
+      </div>
       {results.length > 0 && (
         <ul id="food-results" role="listbox">
           {results.map((r, i) => (
@@ -45,7 +50,7 @@ export default function Search({ items }: { items: Item[] }) {
           ))}
         </ul>
       )}
-      {q.trim() && results.length === 0 && <p className="muted small">לא מצאנו את &quot;{q}&quot; עדיין. נסו שם כללי יותר, למשל &quot;לחם&quot; או &quot;גבינה&quot;.</p>}
+      {q.trim() && results.length === 0 && <p className="empty">לא מצאנו את &quot;{q}&quot; עדיין. נסו שם כללי יותר, למשל &quot;לחם&quot; או &quot;גבינה&quot;.</p>}
     </div>
   );
 }

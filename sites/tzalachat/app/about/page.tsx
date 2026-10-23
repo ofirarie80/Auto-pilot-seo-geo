@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "מקורות ושיטת העבודה
 
 export default function About() {
   return (
-    <article className="wrap narrow">
+    <article className="wrap narrow" style={{ paddingTop: 30 }}>
       <h1>מקורות ושיטת העבודה</h1>
       <p className="lede">{SITE.name} נבנה כדי לענות מהר ובדיוק על שאלה אחת שכולנו שואלים: מה יש באוכל הזה?</p>
       <h2>מאיפה הנתונים</h2>

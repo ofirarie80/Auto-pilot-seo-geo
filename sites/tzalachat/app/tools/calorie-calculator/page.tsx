@@ -19,7 +19,7 @@ const QA = [
 export default function Page() {
   return (
     <article className="wrap narrow">
-      <nav className="crumbs"><Link href="/">{SITE.name}</Link> / מחשבון קלוריות</nav>
+      <nav className="crumbs" style={{ marginTop: 22 }}><Link href="/">{SITE.name}</Link> / <Link href="/tools">מחשבונים</Link> / מחשבון קלוריות</nav>
       <h1>מחשבון קלוריות יומי</h1>
       <p className="lede">כמה קלוריות הגוף שלכם צריך ביום? מלאו ארבעה נתונים והתוצאה תתעדכן מיד.</p>
       <CalorieCalculator />

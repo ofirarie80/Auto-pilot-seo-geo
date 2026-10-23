@@ -7,7 +7,7 @@ type N = { kcal: number; protein: number; carbs: number; fat: number };
 const r1 = (v: number) => (v >= 10 ? Math.round(v) : Math.round(v * 10) / 10);
 
 export default function ServingPicker({ servings, per100 }: { servings: S[]; per100: N }) {
-  const all = [...servings, { label: "100 גרם", g: 100 }];
+  const all = servings.some((x) => x.g === 100) ? servings : [...servings, { label: "100 גרם", g: 100 }];
   const [g, setG] = useState(all[0].g);
   const [custom, setCustom] = useState("");
   const pick = (s: S) => { setG(s.g); setCustom(""); };

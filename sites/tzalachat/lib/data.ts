@@ -5,6 +5,8 @@ export const SITE = {
   name: "צלחת",
   tagline: "כמה קלוריות, חלבון ופחמימות יש בכל מה שעל הצלחת",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://tzalachat.vercel.app",
+  /** Search engines may index the site only when NEXT_PUBLIC_INDEXABLE is exactly "true". */
+  indexable: process.env.NEXT_PUBLIC_INDEXABLE === "true",
 };
 
 export type Nutrients = Record<string, number | null>;

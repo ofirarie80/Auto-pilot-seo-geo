@@ -10,7 +10,9 @@ export const metadata: Metadata = {
   description: `כמה קלוריות, חלבון, פחמימות ושומן יש בכל מאכל: ערכים תזונתיים ל-${foods.length} מאכלים לכל 100 גרם ולכל מנה, השוואות, ${recipes.length} מתכונים עם חישוב תזונתי ומחשבוני קלוריות, BMI וחלבון.`,
   openGraph: { siteName: SITE.name, locale: "he_IL", type: "website" },
   alternates: { canonical: "/" },
-  robots: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large" } as Metadata["robots"],
+  robots: (SITE.indexable
+    ? { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large" }
+    : { index: false, follow: false }) as Metadata["robots"],
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fbfaf6" };

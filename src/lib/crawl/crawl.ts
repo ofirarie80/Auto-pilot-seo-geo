@@ -44,6 +44,15 @@ export type CrawlSummary = {
 
 const normHost = (h: string) => h.toLowerCase().replace(/^www\./, "");
 
+/** One spelling per path: "%d7%90", "%D7%90" and raw Hebrew all become the same string. */
+function canonPath(p: string) {
+  try {
+    return encodeURI(decodeURI(p));
+  } catch {
+    return p;
+  }
+}
+
 function normalize(href: string, base: string, host: string): string | null {
   try {
     const u = new URL(href, base);
@@ -52,6 +61,7 @@ function normalize(href: string, base: string, host: string): string | null {
     if (/\/(wp-admin|wp-json|wp-login|cart|checkout|my-account|feed)\b/i.test(u.pathname)) return null;
     u.hash = "";
     u.search = "";
+    u.pathname = canonPath(u.pathname);
     return u.toString();
   } catch {
     return null;
@@ -118,8 +128,10 @@ function parsePage(html: string, finalUrl: string, host: string) {
   for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
     for (const t of m[1].matchAll(/"@type"\s*:\s*(\[[^\]]*\]|"[^"]+")/g)) for (const v of t[1].matchAll(/"([^"]+)"/g)) schemaTypes.add(v[1]);
   }
-  const imgs = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
-  const noAlt = imgs.filter((i) => !/\balt\s*=\s*["'][^"']+["']/i.test(i)).length;
+  // Images outside <noscript> (tracking pixels live there); alt="" is valid for decorative images, so only a missing alt counts.
+  const imgs = [...html.replace(/<noscript\b[\s\S]*?<\/noscript>/gi, " ").matchAll(/<img\b[^>]*>/gi)].map((m) => m[0])
+    .filter((i) => !/\b(width|height)\s*=\s*["']?1["'\s>]/i.test(i));
+  const noAlt = imgs.filter((i) => !/\balt\s*=/i.test(i)).length;
   const body = html.replace(/<(script|style|noscript|svg|template)\b[\s\S]*?<\/\1>/gi, " ").replace(/<(header|footer|nav)\b[\s\S]*?<\/\1>/gi, " ");
   const text = decode(body.replace(/<[^>]+>/g, " "));
   const words = text ? text.split(" ").filter((w) => /[\p{L}\p{N}]/u.test(w)).length : 0;
@@ -134,7 +146,7 @@ function parsePage(html: string, finalUrl: string, host: string) {
 const sameUrl = (a: string, b: string) => {
   try {
     const x = new URL(a), y = new URL(b);
-    return normHost(x.hostname) === normHost(y.hostname) && x.pathname.replace(/\/$/, "") === y.pathname.replace(/\/$/, "");
+    return normHost(x.hostname) === normHost(y.hostname) && canonPath(x.pathname).replace(/\/$/, "") === canonPath(y.pathname).replace(/\/$/, "");
   } catch {
     return a === b;
   }

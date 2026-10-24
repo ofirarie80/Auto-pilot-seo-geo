@@ -34,7 +34,7 @@ export async function GET(req: Request) {
   const r = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-    body: JSON.stringify(model.startsWith("dall-e") ? { model, prompt, size: "1024x1024", response_format: "b64_json", n: 1 } : { model, prompt, size: "1024x1024", quality: "medium", output_format: "webp", output_compression: 82, n: 1 }),
+    body: JSON.stringify(model.startsWith("dall-e") ? { model, prompt, size: "1024x1024", response_format: "b64_json", n: 1 } : { model, prompt, size: "1024x1024", quality: "medium", output_format: "webp", output_compression: 82, n: 1, ...(style === "cutout" ? { background: "transparent" } : {}) }),
   });
   const j = await r.json();
   if (!r.ok) return Response.json({ error: "openai", status: r.status, detail: j?.error?.message || j }, { status: 502 });

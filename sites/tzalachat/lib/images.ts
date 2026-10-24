@@ -9,6 +9,11 @@ export const IMAGE_STYLES = {
     "Clean modern editorial illustration of {food}. Simple flat shapes with soft gradients and a subtle shadow, " +
     "centered on a plain warm off-white background (#fbfaf6). Friendly, accurate shape and color so the food is easy " +
     "to recognize. Limited palette, no outlines, no text, no labels, no logos.",
+  cutout:
+    "Clean modern editorial illustration of {food}, as an isolated cut-out object on a fully transparent background. " +
+    "No background, no surface, no plate unless the food is served in one, only a very soft contact shadow under the food. " +
+    "Simple flat shapes with soft gradients, friendly and accurate shape and color so the food is easy to recognize. " +
+    "Limited palette, no outlines, no text, no labels, no logos. Leave generous empty margin around the object.",
 } as const;
 export type ImageStyle = keyof typeof IMAGE_STYLES;
 

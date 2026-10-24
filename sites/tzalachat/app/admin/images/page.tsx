@@ -18,16 +18,16 @@ export default async function ImagesAdmin() {
   return (
     <div className="wrap" style={{ padding: "28px 0 60px" }}>
       <h1>גלריית תמונות לבדיקה</h1>
-      <p className="muted">דף פנימי, חסום לגוגל. כל שורה היא מאכל אחד בשני הסגנונות.</p>
+      <p className="muted">דף פנימי, חסום לגוגל. כל שורה היא מאכל אחד בכל הסגנונות. ברקע המשובץ רואים את השקיפות.</p>
       <div style={{ display: "grid", gap: 28, marginTop: 20 }}>
         {rows.map(([slug, s]) => (
           <section key={slug}>
             <h2 style={{ fontSize: 22, marginBottom: 10 }}>{getFood(slug)?.name || slug}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
-              {(["photo", "illustration"] as const).map((st) => (
+              {(["photo", "illustration", "cutout"] as const).map((st) => (
                 <figure key={st} style={{ margin: 0 }}>
-                  {s[st] ? <img src={s[st]} alt={`${getFood(slug)?.name} – ${st}`} style={{ width: "100%", borderRadius: 16, display: "block" }} /> : <div className="muted">—</div>}
-                  <figcaption className="muted" style={{ marginTop: 6 }}>{st === "photo" ? "סגנון צילום" : "סגנון איור"}</figcaption>
+                  {s[st] ? <img src={s[st]} alt={`${getFood(slug)?.name} – ${st}`} style={{ width: "100%", borderRadius: 16, display: "block", background: st === "cutout" ? "repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0/24px 24px" : undefined }} /> : <div className="muted">—</div>}
+                  <figcaption className="muted" style={{ marginTop: 6 }}>{st === "photo" ? "סגנון צילום" : st === "illustration" ? "סגנון איור" : "איור עם רקע שקוף"}</figcaption>
                 </figure>
               ))}
             </div>

@@ -293,7 +293,11 @@ ul.ings li { padding: 8px 0; border-bottom: 1px dashed var(--line); }
 /* food images (preview) */
 .food-img { display: block; position: relative; overflow: hidden; background: #fbfaf6; }
 .food-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.food-img .v-ill { display: none; }
+.food-img .v-ill, .food-img .v-cut { display: none; }
+:root[data-img="cutout"] .food-img .v-cut { display: block; }
+:root[data-img="cutout"] .food-img .v-photo { display: none; }
+:root[data-img="cutout"] .food-img:has(.v-cut:not(.fallback)) { background: transparent; box-shadow: none; }
+:root[data-img="cutout"] .food-img .v-cut:not(.fallback) { object-fit: contain; }
 :root[data-img="illustration"] .food-img .v-ill { display: block; }
 :root[data-img="illustration"] .food-img .v-photo { display: none; }
 .hero-photo { border-radius: var(--radius-l); aspect-ratio: 1; box-shadow: var(--shadow); width: 100%; max-width: 300px; }

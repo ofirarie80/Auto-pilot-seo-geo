@@ -5,10 +5,12 @@ export default function FoodImage({ slug, alt, className, eager }: { slug: strin
   const photo = foodImage(slug, "photo");
   if (!photo) return null;
   const ill = foodImage(slug, "illustration")!;
+  const cut = foodImage(slug, "cutout") || ill;
   return (
     <span className={`food-img ${className || ""}`}>
       <img className="v-photo" src={photo} alt={alt} width={1024} height={1024} loading={eager ? "eager" : "lazy"} decoding="async" />
       <img className="v-ill" src={ill} alt={alt} width={1024} height={1024} loading="lazy" decoding="async" />
+      <img className={`v-cut${cut === ill ? " fallback" : ""}`} src={cut} alt={alt} width={1024} height={1024} loading="lazy" decoding="async" />
     </span>
   );
 }

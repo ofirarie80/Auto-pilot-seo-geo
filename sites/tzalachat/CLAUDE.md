@@ -47,6 +47,11 @@ Tags in use: ללא גלוטן, טבעוני, צמחוני, עשיר בחלבו�
 - Ingredient label: household amount first ("2 כפות שמן זית"), grams go in `g`.
 - Use ASCII hyphen in compounds (כ-5), en dash for ranges (6–8). No English unless it is a brand or unit.
 
+## Recurring routines
+
+The shared `site-routines` skill runs the SEO/GEO routines listed in `ops/routines.json` (procedures in
+`.claude/skills/site-routines/playbooks.md`). Site settings for it are in `site.json`.
+
 ## Content agents
 
 Defined in `/.claude/agents/`: `tzalachat-opportunities` finds what to build, `tzalachat-writer` builds it,

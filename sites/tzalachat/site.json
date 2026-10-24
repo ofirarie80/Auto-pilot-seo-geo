@@ -1,0 +1,29 @@
+{
+  "_doc": "Per-site config read by the shared site-routines skill. A new site in the network = a new sites/<name>/ folder with this file, CLAUDE.md, ops/routines.json and its own content agents.",
+  "id": "tzalachat",
+  "name": "צלחת",
+  "niche": "ערכים תזונתיים, מתכונים, דיאטות ומחשבונים",
+  "language": "he",
+  "country": "il",
+  "baseBranch": "site/tzalachat",
+  "repo": "ofirarie80/Auto-pilot-seo-geo",
+  "vercelProject": "tzalachat",
+  "domain": null,
+  "previewUrl": "https://tzalachat-delta.vercel.app",
+  "indexableEnv": "NEXT_PUBLIC_INDEXABLE",
+  "competitors": ["foodsdictionary.co.il"],
+  "controlBoard": "https://claude.ai/artifact/DAg3AnVQY1bGqfEtYGjdd8",
+  "ownerEmail": "ofirarie80@gmail.com",
+  "agents": {"scout": "tzalachat-opportunities", "writer": "tzalachat-writer", "reviewer": "tzalachat-reviewer"},
+  "geoQuestions": ["כמה קלוריות יש בפיתה", "כמה חלבון יש בביצה", "כמה קלוריות צריך לאכול ביום", "מה יותר בריא אורז או קינואה", "כמה קלוריות יש בסופגניה", "ערך תזונתי של אבוקדו", "מחשבון קלוריות", "כמה סוכר יש בבננה", "מזונות עשירים בחלבון", "כמה קלוריות יש בשקשוקה"],
+  "seasons": [
+    {"name": "חנוכה", "month": 12, "topics": ["סופגניות", "לביבות", "קלוריות בסופגניה"]},
+    {"name": "ט\"ו בשבט", "month": 2, "topics": ["פירות יבשים", "ערך תזונתי תמרים ותאנים"]},
+    {"name": "פורים", "month": 3, "topics": ["אוזני המן", "משלוחי מנות"]},
+    {"name": "פסח", "month": 4, "topics": ["קלוריות במצה", "מתכונים כשרים לפסח", "קניידלך"]},
+    {"name": "שבועות", "month": 5, "topics": ["עוגת גבינה", "מאכלי חלב"]},
+    {"name": "קיץ", "month": 6, "topics": ["שתייה", "אבטיח", "ארטיקים ביתיים", "סלטים קלים"]},
+    {"name": "ראש השנה", "month": 9, "topics": ["דבש", "סלטים לראש השנה", "סימנים"]},
+    {"name": "סוכות", "month": 10, "topics": ["ממולאים", "מאכלי סתיו"]}
+  ]
+}

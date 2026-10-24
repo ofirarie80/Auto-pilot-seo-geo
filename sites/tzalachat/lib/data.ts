@@ -12,7 +12,7 @@ export const SITE = {
 export type Nutrients = Record<string, number | null>;
 export type Serving = { label: string; g: number };
 export type Food = {
-  slug: string; name: string; ndb: string; usda: string; category: string;
+  slug: string; name: string; ndb: string; usda: string; en?: string; category: string;
   servings: Serving[]; aliases: string[]; n: Nutrients;
 };
 export type Category = { slug: string; name: string; emoji: string };

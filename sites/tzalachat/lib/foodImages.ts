@@ -1,7 +1,7 @@
-/** Foods that already have generated images (both styles). Replaced by a generated manifest once images are produced in bulk. */
-const BLOB = "https://14oqrvf8z54bncjn.public.blob.vercel-storage.com";
-export const IMAGED = new Set(["מאפין-אנגלי", "בננה", "חזה-עוף", "פיתה", "חומוס", "אבוקדו", "קוטג", "תמר", "סלמון", "ביצה"]);
-export const CUTOUT = new Set(["בננה", "אבוקדו", "פיתה", "סלמון", "ביצה", "חומוס"]);
-export const foodImage = (slug: string, style: "photo" | "illustration" | "cutout" = "photo") =>
-  style === "cutout" ? (CUTOUT.has(slug) ? `${BLOB}/foods/cutout/${encodeURIComponent(slug)}.webp` : null) :
-  IMAGED.has(slug) ? `${BLOB}/foods/${style}/${encodeURIComponent(slug)}.webp` : null;
+import manifest from "@/data/food-images.json";
+
+/** Food illustrations (transparent background), generated per food and listed at build time. */
+const MAP = manifest as Record<string, string>;
+export const hasImage = (slug: string) => slug in MAP;
+export const foodImage = (slug: string) => MAP[slug] ?? null;
+export const imageCount = () => Object.keys(MAP).length;

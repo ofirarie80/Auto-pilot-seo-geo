@@ -41,7 +41,7 @@ for slug, name, ndb, cat, servs, aliases in list(base.FOODS) + list(more.MORE):
     seen.add(slug)
     seen_ndb[ndb] = slug
     r = sr[ndb]
-    out.append({"slug": slug, "name": name, "ndb": ndb, "usda": r["desc"], "category": cat,
+    out.append({"slug": slug, "name": name, "ndb": ndb, "usda": r["desc"], "en": r.get("long", r["desc"]), "category": cat,
                 "servings": [{"label": l, "g": g} for l, g in servs], "aliases": aliases,
                 "n": {k: r[k] for k in KEEP}})
 

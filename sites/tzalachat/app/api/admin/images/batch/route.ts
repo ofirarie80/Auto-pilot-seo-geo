@@ -55,5 +55,10 @@ export async function GET(req: Request) {
   results.forEach((r) => { all.push(r); if (r.ok) have.add(r.slug); });
   }
   const created = all.filter((r) => r.ok).length;
-  return Response.json({ created, createdSlugs: all.filter((r) => r.ok).map((r) => r.slug), failed: all.filter((r) => !r.ok), missing: foods.length - have.size, total: foods.length });
+  // Static pages list images at build time: after a nightly run that added images, rebuild production.
+  let rebuilt = false;
+  if (byCron && created > 0 && process.env.DEPLOY_HOOK_URL) {
+    try { rebuilt = (await fetch(process.env.DEPLOY_HOOK_URL, { method: "POST" })).ok; } catch {}
+  }
+  return Response.json({ rebuilt, created, createdSlugs: all.filter((r) => r.ok).map((r) => r.slug), failed: all.filter((r) => !r.ok), missing: foods.length - have.size, total: foods.length });
 }

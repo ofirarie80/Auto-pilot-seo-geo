@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     const ids = (mj.data || []).map((x: { id: string }) => x.id).filter((id: string) => /image|dall/i.test(id)).sort();
     return Response.json({ status: m.status, image_models: ids, error: mj.error?.message });
   }
-  const model = u.searchParams.get("model") || process.env.IMAGE_MODEL || "gpt-image-1";
+  const model = u.searchParams.get("model") || process.env.IMAGE_MODEL || "gpt-image-2";
   const slug = u.searchParams.get("slug") || "";
   const style = (u.searchParams.get("style") || "photo") as ImageStyle;
   const food = getFood(slug);

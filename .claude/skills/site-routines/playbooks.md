@@ -24,8 +24,8 @@ site's domain; call the Ahrefs `doc` tool before first use. Compare the last 28 
 **Goal:** every food page has a transparent-background illustration (the house style, approved 2026-10-24).
 1. Find the latest READY deployment of the Vercel project (any branch) and call, with the Vercel `web_fetch_vercel_url`
    tool, `<deployment>/api/admin/images/batch?key=<IMAGE_ADMIN_SECRET>&n=10` repeatedly (one call at a time, never in
-   parallel) until `missing` is 0 or 30 calls were made. The secret is in the project env as `IMAGE_ADMIN_SECRET`;
-   ask the owner for it if you cannot read it. New foods from this week's content run come first: pass their slugs
+   parallel) until `missing` is 0 or 30 calls were made. The key is in the control board
+   (`ArtifactData` get, collection `config`, doc `images`, field `adminKey`); never write it into the repo. New foods from this week's content run come first: pass their slugs
    with `&slugs=a,b,c` before the general calls.
 2. Images appear on the site at the next build (the prebuild step lists them from Blob). No commit is needed.
 3. Report how many were created and how many are still missing. Open `/admin/images` on the deployment and list

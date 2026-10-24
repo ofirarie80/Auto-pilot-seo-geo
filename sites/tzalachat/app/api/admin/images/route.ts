@@ -16,6 +16,13 @@ export async function GET(req: Request) {
   if (!process.env.OPENAI_API_KEY) return Response.json({ error: "OPENAI_API_KEY missing" }, { status: 500 });
   if (!process.env.BLOB_READ_WRITE_TOKEN) return Response.json({ error: "BLOB_READ_WRITE_TOKEN missing" }, { status: 500 });
 
+  if (u.searchParams.get("models")) {
+    const m = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` } });
+    const mj = await m.json();
+    const ids = (mj.data || []).map((x: { id: string }) => x.id).filter((id: string) => /image|dall/i.test(id)).sort();
+    return Response.json({ status: m.status, image_models: ids, error: mj.error?.message });
+  }
+  const model = u.searchParams.get("model") || process.env.IMAGE_MODEL || "gpt-image-1";
   const slug = u.searchParams.get("slug") || "";
   const style = (u.searchParams.get("style") || "photo") as ImageStyle;
   const food = getFood(slug);
@@ -27,11 +34,11 @@ export async function GET(req: Request) {
   const r = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
-    body: JSON.stringify({ model: "gpt-image-1", prompt, size: "1024x1024", quality: "medium", output_format: "webp", output_compression: 82, n: 1 }),
+    body: JSON.stringify(model.startsWith("dall-e") ? { model, prompt, size: "1024x1024", response_format: "b64_json", n: 1 } : { model, prompt, size: "1024x1024", quality: "medium", output_format: "webp", output_compression: 82, n: 1 }),
   });
   const j = await r.json();
   if (!r.ok) return Response.json({ error: "openai", status: r.status, detail: j?.error?.message || j }, { status: 502 });
   const bytes = Buffer.from(j.data[0].b64_json, "base64");
   const blob = await put(imagePath(food.slug, style), bytes, { access: "public", contentType: "image/webp", addRandomSuffix: false, allowOverwrite: true });
-  return Response.json({ ok: true, slug: food.slug, style, url: blob.url, kb: Math.round(bytes.length / 1024), prompt });
+  return Response.json({ ok: true, model, slug: food.slug, style, url: blob.url, kb: Math.round(bytes.length / 1024), prompt });
 }

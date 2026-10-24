@@ -10,6 +10,10 @@ Nothing goes to the live site without the owner. You open a PR; he approves.
 
 ## Steps
 
+0. **Check the switch.** If the `ArtifactData` tool is available, read `jobs/tzalachat-weekly` from
+   https://claude.ai/artifact/DAg3AnVQY1bGqfEtYGjdd8. If `status` is `paused`, stop without doing anything.
+   Otherwise add a `runs` doc `r-YYYYMMDD` `{job: "tzalachat-weekly", date, status: "running", summary: "רצה עכשיו"}`.
+
 1. **Branch.** `git fetch origin && git checkout -B content/YYYY-MM-DD origin/site/tzalachat` (today's date).
    `cd sites/tzalachat && npm ci` if `node_modules` is missing.
 2. **Scout.** Run the `tzalachat-opportunities` agent. Wait for its report path and writer queue.
@@ -30,6 +34,9 @@ Nothing goes to the live site without the owner. You open a PR; he approves.
    https://claude.ai/artifact/DAg3AnVQY1bGqfEtYGjdd8: collection `ideas`, doc id `w-YYYYMMDD-<n>`,
    `{title, world, priority: "mid", status: "idea", author: "claude", note, createdAt}` where `world` is one of
    foods, recipes, collections, tools, products, diets, health, compare, kitchen, geo, app, trainers.
+   Then update the run: `runs/r-YYYYMMDD` → `{status: "review" (PR waiting) | "failed", summary (one Hebrew line:
+   what was built, what the review caught), links: [{label: "PR", url}, {label: "תצוגה מקדימה", url}]}` and
+   `jobs/tzalachat-weekly` → `{lastRun: <now ISO>, nextRun: <next Sunday 08:43 Asia/Jerusalem as ISO>, lastResult}`.
    Skip silently if the tool is not available.
 7. **Email the owner** (ofirarie80@gmail.com) with the Gmail tool, in Hebrew, short:
    subject `צלחת: <n> דפים חדשים מחכים לאישור`; body: 3–5 lines of findings, the list of new pages with preview

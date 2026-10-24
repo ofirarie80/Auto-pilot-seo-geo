@@ -20,9 +20,11 @@ Nothing goes to the live site without the owner. You open a PR; he approves.
      the entry) and listed as "נדחה" in the summary. Re-run `validate.py` and `npm run build` after reverting.
 5. **Commit and PR.** Commit data changes plus `ops/` reports with message
    `tzalachat: weekly content YYYY-MM-DD (<n> new pages)`. Push the branch and open a PR into `site/tzalachat`
-   with `gh pr create`. PR body in Hebrew: the items built (type, name, path, keyword, volume), items rejected,
-   and the "דורש פיתוח או החלטה" table. Vercel posts a preview link on the PR; fetch it with
-   `gh pr view --comments` after ~3 minutes, or list the project's latest deployment for that branch.
+   with the REST API (GraphQL, and so `gh pr create`, is blocked in Claude Code sessions):
+   `gh api repos/ofirarie80/Auto-pilot-seo-geo/pulls -f base=site/tzalachat -f head=<branch> -f title=... -F body=@<file>`. PR body in Hebrew: the items built (type, name, path, keyword, volume), items rejected,
+   and the "דורש פיתוח או החלטה" table. Vercel posts a preview link on the PR; or list the Vercel
+   project's deployments for that branch (project `tzalachat`) and use its branch alias
+   `tzalachat-git-<branch-with-slashes-as-dashes>-ofirarie80-3839s-projects.vercel.app`.
    Never merge the PR yourself.
 6. **Control board.** If the `ArtifactData` tool is available, add each "דורש פיתוח או החלטה" row as an idea in
    https://claude.ai/artifact/DAg3AnVQY1bGqfEtYGjdd8: collection `ideas`, doc id `w-YYYYMMDD-<n>`,

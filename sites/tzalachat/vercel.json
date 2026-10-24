@@ -1,0 +1,3 @@
+{
+  "crons": [{ "path": "/api/admin/images/batch?n=10", "schedule": "17 2 * * *" }]
+}

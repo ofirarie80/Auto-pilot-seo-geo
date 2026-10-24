@@ -19,18 +19,16 @@ site's domain; call the Ahrefs `doc` tool before first use. Compare the last 28 
    ranked before (so Google sees the move).
 **Output:** list of gaps (query, impressions, position, old page → new page).
 
-## food-images: איורים למאכלים חדשים (weekly)
+## food-images: איורים למאכלים חדשים (weekly check)
 
 **Goal:** every food page has a transparent-background illustration (the house style, approved 2026-10-24).
-1. Find the latest READY deployment of the Vercel project (any branch) and call, with the Vercel `web_fetch_vercel_url`
-   tool, `<deployment>/api/admin/images/batch?key=<IMAGE_ADMIN_SECRET>&n=10` repeatedly (one call at a time, never in
-   parallel) until `missing` is 0 or 30 calls were made. The key is in the control board
-   (`ArtifactData` get, collection `config`, doc `images`, field `adminKey`); never write it into the repo. New foods from this week's content run come first: pass their slugs
-   with `&slugs=a,b,c` before the general calls.
-2. Images appear on the site at the next build (the prebuild step lists them from Blob). No commit is needed.
-3. Report how many were created and how many are still missing. Open `/admin/images` on the deployment and list
-   any image whose food looks wrong (wrong food, packaging, text in the image) so it can be regenerated
-   (`/api/admin/images?...&slug=<slug>&style=cutout` overwrites it).
+Generation runs by itself: a Vercel Cron on the production deployment calls `/api/admin/images/batch` every night
+and creates up to 30 missing illustrations (protected by `CRON_SECRET`; no key is needed or stored anywhere else).
+The routine only checks the result:
+1. Open `/admin/images` on the latest deployment with the Vercel `web_fetch_vercel_url` tool and count images vs foods.
+2. List any image whose food looks wrong (wrong food, packaging, text in the image) for the owner, so it can be
+   regenerated. If no images were added for a week while foods are missing, report that the cron is not running
+   (it only runs on a production deployment).
 
 ## striking-distance: דחיפת מקומות 4–20 (weekly)
 

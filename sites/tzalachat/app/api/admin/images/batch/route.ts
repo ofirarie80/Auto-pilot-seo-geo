@@ -12,9 +12,12 @@ export const maxDuration = 300;
  */
 export async function GET(req: Request) {
   const u = new URL(req.url);
-  if (!process.env.IMAGE_ADMIN_SECRET || u.searchParams.get("key") !== process.env.IMAGE_ADMIN_SECRET) return Response.json({ error: "forbidden" }, { status: 403 });
+  const byKey = !!process.env.IMAGE_ADMIN_SECRET && u.searchParams.get("key") === process.env.IMAGE_ADMIN_SECRET;
+  const byCron = !!process.env.CRON_SECRET && req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
+  if (!byKey && !byCron) return Response.json({ error: "forbidden" }, { status: 403 });
   if (!process.env.OPENAI_API_KEY || !process.env.BLOB_READ_WRITE_TOKEN) return Response.json({ error: "missing env" }, { status: 500 });
   const n = Math.min(Number(u.searchParams.get("n") || 6), 10);
+  const rounds = byCron ? 3 : 1; // nightly cron: 3 rounds of 10
 
   const have = new Set<string>();
   let cursor: string | undefined;
@@ -24,9 +27,12 @@ export async function GET(req: Request) {
     cursor = r.hasMore ? r.cursor : undefined;
   } while (cursor);
 
+  const all: { slug: string; ok: boolean; url?: string; error?: string }[] = [];
+  for (let round = 0; round < rounds; round++) {
   const wanted = (u.searchParams.get("slugs") || "").split(",").map((s) => s.trim()).filter(Boolean);
   const pool = wanted.length ? wanted.map((s) => getFood(s)).filter((f): f is NonNullable<typeof f> => !!f) : foods;
   const queue = pool.filter((f) => !have.has(f.slug)).slice(0, n);
+  if (!queue.length) break;
 
   const results = await Promise.all(queue.map(async (f) => {
     const what = (f.en || f.usda).replace(/\s+/g, " ");
@@ -46,6 +52,8 @@ export async function GET(req: Request) {
     }
   }));
 
-  const created = results.filter((r) => r.ok).length;
-  return Response.json({ created, createdSlugs: results.filter((r) => r.ok).map((r) => r.slug), failed: results.filter((r) => !r.ok), missing: foods.length - have.size - created, total: foods.length });
+  results.forEach((r) => { all.push(r); if (r.ok) have.add(r.slug); });
+  }
+  const created = all.filter((r) => r.ok).length;
+  return Response.json({ created, createdSlugs: all.filter((r) => r.ok).map((r) => r.slug), failed: all.filter((r) => !r.ok), missing: foods.length - have.size, total: foods.length });
 }

@@ -89,6 +89,17 @@ site's domain; call the Ahrefs `doc` tool before first use. Compare the last 28 
 2. GSC: pages not indexed after 14 days → strengthen internal links to them, check for thin content or
    duplication; list them in the report.
 
+## index-tiers: פתיחת דפים לגוגל לפי שכבות (weekly)
+
+**Model:** every page has an index tier in the site data. Tier 1 = indexable (proven demand or unique content).
+Tier 2 = live for visitors but `noindex` and left out of the sitemap. Tier 3 = not generated.
+1. Promote tier 2 → tier 1 when the page got impressions in GSC (Google found it through links), earned an
+   external link, or its target keyword now shows volume ≥ 50 in Ahrefs.
+2. Widen the gate by site trust: when ≥ 80% of tier-1 pages are indexed (GSC) for 4 weeks in a row, promote the
+   next batch of tier-2 pages (largest demand first, at most +20% of the indexed count per month).
+3. Demote to tier 2 any tier-1 page with zero impressions for 120 days that is not a hub.
+4. Never promote pages the reviewer flagged as thin. Record every promotion and demotion in the report.
+
 ## geo-visibility: נראות במנועי AI (every 2 weeks)
 
 1. Ask each question in `site.json.geoQuestions` to ChatGPT, Gemini, Perplexity and Claude with web search

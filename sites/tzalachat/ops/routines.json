@@ -1,22 +1,199 @@
 {
   "_doc": "Recurring SEO/GEO routines for צלחת. The weekly orchestrator (.claude/skills/tzalachat-routines) runs every routine that is enabled, due (days since lastRun >= every) and whose requirements are met. The control board's jobs collection overrides 'enabled' (status paused = skip). Update lastRun after each run.",
   "routines": [
-    {"id": "tzalachat-weekly", "name": "ריצת תוכן שבועית", "cat": "content", "every": 7, "requires": ["ahrefs"], "enabled": true, "lastRun": "2026-10-24"},
-    {"id": "gsc-gap-pages", "name": "ביטויים בלי עמוד", "cat": "content", "every": 7, "requires": ["launch", "gsc"], "enabled": true, "lastRun": null},
-    {"id": "question-mining", "name": "כריית שאלות ו-FAQ", "cat": "content", "every": 14, "requires": ["ahrefs"], "enabled": true, "lastRun": null},
-    {"id": "seasonal", "name": "לוח עונתי וחגים", "cat": "content", "every": 30, "requires": [], "enabled": true, "lastRun": null},
-    {"id": "striking-distance", "name": "דחיפת מקומות 4–20", "cat": "optimize", "every": 7, "requires": ["launch", "gsc"], "enabled": true, "lastRun": null},
-    {"id": "ctr-titles", "name": "שיפור CTR: כותרות ותיאורים", "cat": "optimize", "every": 14, "requires": ["launch", "gsc"], "enabled": true, "lastRun": null},
-    {"id": "content-refresh", "name": "רענון דפים שיורדים", "cat": "optimize", "every": 30, "requires": ["launch", "gsc"], "enabled": true, "lastRun": null},
-    {"id": "cannibalization", "name": "דפים שמתחרים זה בזה", "cat": "optimize", "every": 30, "requires": ["launch", "gsc"], "enabled": true, "lastRun": null},
-    {"id": "internal-links", "name": "קישורים פנימיים ודפים יתומים", "cat": "technical", "every": 7, "requires": [], "enabled": true, "lastRun": null},
-    {"id": "tech-health", "name": "בריאות טכנית", "cat": "technical", "every": 7, "requires": [], "enabled": true, "lastRun": null},
-    {"id": "indexing", "name": "אינדוקס דפים חדשים", "cat": "technical", "every": 7, "requires": ["launch"], "enabled": true, "lastRun": null},
-    {"id": "geo-visibility", "name": "נראות במנועי AI", "cat": "geo", "every": 14, "requires": ["launch"], "enabled": true, "lastRun": null},
-    {"id": "geo-format", "name": "התאמת דפים לציטוט ב-AI", "cat": "geo", "every": 30, "requires": [], "enabled": true, "lastRun": null},
-    {"id": "competitor-watch", "name": "מעקב מתחרים", "cat": "research", "every": 30, "requires": ["ahrefs"], "enabled": true, "lastRun": null},
-    {"id": "link-plan", "name": "תוכנית קישורים חודשית (iLINK)", "cat": "links", "every": 30, "requires": ["launch"], "enabled": true, "lastRun": null},
-    {"id": "data-audit", "name": "בדיקת דיוק נתונים", "cat": "quality", "every": 30, "requires": [], "enabled": true, "lastRun": null},
-    {"id": "monthly-report", "name": "דוח חודשי", "cat": "report", "every": 30, "requires": ["launch"], "enabled": true, "lastRun": null}
+    {
+      "id": "tzalachat-weekly",
+      "name": "ריצת תוכן שבועית",
+      "cat": "content",
+      "every": 7,
+      "requires": [
+        "ahrefs"
+      ],
+      "enabled": true,
+      "lastRun": "2026-10-24"
+    },
+    {
+      "id": "gsc-gap-pages",
+      "name": "ביטויים בלי עמוד",
+      "cat": "content",
+      "every": 7,
+      "requires": [
+        "launch",
+        "gsc"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "question-mining",
+      "name": "כריית שאלות ו-FAQ",
+      "cat": "content",
+      "every": 14,
+      "requires": [
+        "ahrefs"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "seasonal",
+      "name": "לוח עונתי וחגים",
+      "cat": "content",
+      "every": 30,
+      "requires": [],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "striking-distance",
+      "name": "דחיפת מקומות 4–20",
+      "cat": "optimize",
+      "every": 7,
+      "requires": [
+        "launch",
+        "gsc"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "ctr-titles",
+      "name": "שיפור CTR: כותרות ותיאורים",
+      "cat": "optimize",
+      "every": 14,
+      "requires": [
+        "launch",
+        "gsc"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "content-refresh",
+      "name": "רענון דפים שיורדים",
+      "cat": "optimize",
+      "every": 30,
+      "requires": [
+        "launch",
+        "gsc"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "cannibalization",
+      "name": "דפים שמתחרים זה בזה",
+      "cat": "optimize",
+      "every": 30,
+      "requires": [
+        "launch",
+        "gsc"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "internal-links",
+      "name": "קישורים פנימיים ודפים יתומים",
+      "cat": "technical",
+      "every": 7,
+      "requires": [],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "tech-health",
+      "name": "בריאות טכנית",
+      "cat": "technical",
+      "every": 7,
+      "requires": [],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "indexing",
+      "name": "אינדוקס דפים חדשים",
+      "cat": "technical",
+      "every": 7,
+      "requires": [
+        "launch"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "index-tiers",
+      "name": "פתיחת דפים לגוגל לפי שכבות",
+      "cat": "technical",
+      "every": 7,
+      "requires": [
+        "launch",
+        "gsc"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "geo-visibility",
+      "name": "נראות במנועי AI",
+      "cat": "geo",
+      "every": 14,
+      "requires": [
+        "launch"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "geo-format",
+      "name": "התאמת דפים לציטוט ב-AI",
+      "cat": "geo",
+      "every": 30,
+      "requires": [],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "competitor-watch",
+      "name": "מעקב מתחרים",
+      "cat": "research",
+      "every": 30,
+      "requires": [
+        "ahrefs"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "link-plan",
+      "name": "תוכנית קישורים חודשית (iLINK)",
+      "cat": "links",
+      "every": 30,
+      "requires": [
+        "launch"
+      ],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "data-audit",
+      "name": "בדיקת דיוק נתונים",
+      "cat": "quality",
+      "every": 30,
+      "requires": [],
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "monthly-report",
+      "name": "דוח חודשי",
+      "cat": "report",
+      "every": 30,
+      "requires": [
+        "launch"
+      ],
+      "enabled": true,
+      "lastRun": null
+    }
   ]
 }

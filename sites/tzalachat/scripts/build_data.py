@@ -2,7 +2,9 @@
 
 Validates: unique slugs, unique USDA ids, valid categories, existing USDA ids, servings present.
 """
-import json, importlib.util
+import json, gzip, importlib.util, os
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def load(name, path):
@@ -12,9 +14,9 @@ def load(name, path):
     return m
 
 
-base = load("base", "/home/claude/scripts/foods_he.py")
-more = load("more", "/home/claude/scripts/foods_more.py")
-sr = json.load(open("/home/claude/data/sr28.json"))
+base = load("base", os.path.join(HERE, "foods_he.py"))
+more = load("more", os.path.join(HERE, "foods_more.py"))
+sr = json.load(gzip.open(os.path.join(HERE, "usda", "sr28.json.gz"), "rt"))
 KEEP = ["water", "kcal", "protein", "fat", "carbs", "fiber", "sugar", "calcium", "iron", "magnesium", "phosphorus",
         "potassium", "sodium", "zinc", "vitC", "thiamin", "riboflavin", "niacin", "vitB6", "folateDFE", "vitB12",
         "vitA_RAE", "vitE", "vitD_mcg", "vitK", "satFat", "monoFat", "polyFat", "cholesterol"]
@@ -48,6 +50,6 @@ if errors:
     raise SystemExit(1)
 
 catlist = [{"slug": k, "name": v[0], "emoji": v[1]} for k, v in cats.items()]
-dst = "/home/claude/auto-pilot-seo-geo/sites/tzalachat/data/foods.json"
+dst = os.path.join(HERE, "..", "data", "foods.json")
 json.dump({"foods": out, "categories": catlist}, open(dst, "w"), ensure_ascii=False, separators=(",", ":"))
 print(len(out), "foods", len(catlist), "categories")

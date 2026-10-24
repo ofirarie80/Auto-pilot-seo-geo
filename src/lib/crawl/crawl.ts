@@ -18,7 +18,7 @@ export const ISSUES: Record<string, { label: string; severity: Severity; fix: st
   noindex: { label: "חסום לגוגל (noindex)", severity: "fail", fix: "אם העמוד צריך להופיע בגוגל, להסיר noindex. אם לא, להוציא אותו מה-sitemap." },
   no_title: { label: "אין כותרת (title)", severity: "fail", fix: "להוסיף title ייחודי של 30–60 תווים." },
   dup_title: { label: "כותרת כפולה", severity: "warn", fix: "לתת לכל עמוד title ייחודי." },
-  title_long: { label: "כותרת ארוכה מדי", severity: "warn", fix: "לקצר ל-60 תווים בערך, כדי שלא תיחתך בגוגל." },
+  title_long: { label: "כותרת ארוכה (עלולה להיחתך)", severity: "warn", fix: "גוגל מציג בערך 60–70 תווים. אם גוגל כבר משכתב את הכותרת בתוצאות, אפשר להשאיר. אחרת לקצר ולשים את מילת המפתח בהתחלה." },
   title_short: { label: "כותרת קצרה מדי", severity: "warn", fix: "להרחיב ל-30–60 תווים עם מילת המפתח." },
   no_meta: { label: "אין תיאור מטא", severity: "warn", fix: "להוסיף meta description של 120–155 תווים." },
   dup_meta: { label: "תיאור מטא כפול", severity: "warn", fix: "לכתוב תיאור ייחודי לכל עמוד." },
@@ -169,7 +169,7 @@ async function crawlOne(url: string, host: string) {
     });
     if (row.noindex) issues.push("noindex");
     if (!p.title) issues.push("no_title");
-    else if (p.title.length > 65) issues.push("title_long");
+    else if (p.title.length > 70) issues.push("title_long");
     else if (p.title.length < 20) issues.push("title_short");
     if (!p.description) issues.push("no_meta");
     if (!p.h1s.length) issues.push("no_h1");

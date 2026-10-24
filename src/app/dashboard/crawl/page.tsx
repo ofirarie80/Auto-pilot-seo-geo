@@ -161,7 +161,7 @@ export default async function Crawl({ searchParams }: { searchParams: Promise<{ 
                         <td className="border-b border-[#EEF1F4] px-3 py-2.5 dark:border-white/5">
                           <span className="flex flex-wrap gap-1">
                             {p.issues.length ? p.issues.filter((i) => ISSUES[i]).map((i) => (
-                              <span key={i} className={`rounded px-1.5 py-0.5 text-[11px] ${ISSUES[i].severity === "fail" ? "bg-[#FDE8E6] text-[#B42318]" : "bg-[#FBEFD9] text-[#8A4B00]"}`}>{ISSUES[i].label}{(i === "title_long" || i === "title_short") && p.title ? ` (${p.title.length} תווים, מומלץ 30–60)` : ""}</span>
+                              <span key={i} className={`rounded px-1.5 py-0.5 text-[11px] ${ISSUES[i].severity === "fail" ? "bg-[#FDE8E6] text-[#B42318]" : "bg-[#FBEFD9] text-[#8A4B00]"}`}>{ISSUES[i].label}{(i === "title_long" || i === "title_short") && p.title ? ` (${p.title.length} תווים, מומלץ עד 60–70)` : ""}</span>
                             )) : <span className="text-xs text-[#1F7A45]">תקין</span>}
                           </span>
                         </td>

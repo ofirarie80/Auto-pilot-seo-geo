@@ -45,6 +45,15 @@
       "lastRun": null
     },
     {
+      "id": "food-images",
+      "name": "איורים למאכלים חדשים",
+      "cat": "content",
+      "every": 7,
+      "requires": [],
+      "enabled": true,
+      "lastRun": "2026-10-24"
+    },
+    {
       "id": "striking-distance",
       "name": "דחיפת מקומות 4–20",
       "cat": "optimize",

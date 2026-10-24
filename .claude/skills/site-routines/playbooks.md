@@ -19,6 +19,19 @@ site's domain; call the Ahrefs `doc` tool before first use. Compare the last 28 
    ranked before (so Google sees the move).
 **Output:** list of gaps (query, impressions, position, old page → new page).
 
+## food-images: איורים למאכלים חדשים (weekly)
+
+**Goal:** every food page has a transparent-background illustration (the house style, approved 2026-10-24).
+1. Find the latest READY deployment of the Vercel project (any branch) and call, with the Vercel `web_fetch_vercel_url`
+   tool, `<deployment>/api/admin/images/batch?key=<IMAGE_ADMIN_SECRET>&n=10` repeatedly (one call at a time, never in
+   parallel) until `missing` is 0 or 30 calls were made. The secret is in the project env as `IMAGE_ADMIN_SECRET`;
+   ask the owner for it if you cannot read it. New foods from this week's content run come first: pass their slugs
+   with `&slugs=a,b,c` before the general calls.
+2. Images appear on the site at the next build (the prebuild step lists them from Blob). No commit is needed.
+3. Report how many were created and how many are still missing. Open `/admin/images` on the deployment and list
+   any image whose food looks wrong (wrong food, packaging, text in the image) so it can be regenerated
+   (`/api/admin/images?...&slug=<slug>&style=cutout` overwrites it).
+
 ## striking-distance: דחיפת מקומות 4–20 (weekly)
 
 **Goal:** the fastest traffic gains are queries at positions 4–20 with real volume.

@@ -20,10 +20,19 @@ or a reviewer report with fixes to apply. When fixing, change only what the revi
   USDA household weights the search prints, translated to Israeli units (כוס, כף, יחידה, פרוסה), plus a
   common Israeli portion when it differs. Add aliases people actually search (spelling variants, plural).
   Then run `python3 -I sites/tzalachat/scripts/build_data.py`.
+  Category for items that fit none cleanly: leavening, yeast, powders and supplements → `herbs`;
+  dry noodles → `grains`; ready dishes → `dishes`. The category in the opportunity report is a suggestion.
 - **recipe**: add an object to `sites/tzalachat/data/recipes.json`. Every ingredient must be an existing food
   slug; if a key ingredient is missing, add the food first. Skip salt, pepper, water and dry spices under 5 g
   (mention them in the steps instead). Grams are for the whole recipe; `servings` is how many plates it makes.
   Write an original recipe from cooking knowledge, never from a website.
+  Use the raw food entry for an ingredient that gets cooked in the recipe (raw ground beef, raw potato), not a
+  cooked entry, so totals are not counted twice. The 5 g skip rule is for seasoning only; baking powder, yeast,
+  baking soda and anything that changes the result are listed.
+  Fat used to grease a pan or tin is listed too: add its grams and say so in the label ("ועוד מעט לשימון").
+  Sauces, spreads and dips: `servings` = portions of about 2 tablespoons, as in the existing tahini recipe.
+  A recipe page links to food pages through its ingredients only; a link to a ready-made food page with the same
+  name (e.g. /food/פסטו) needs a code change, so list it under "skipped" for the owner.
 - **list**: add a `ListDef` to `BASE_LISTS` in `sites/tzalachat/lib/data.ts` following the existing ones.
   Check that `rankList` returns at least 10 sensible items (no herbs or powders topping a "food" list; use
   `exclude` or `cats`).

@@ -10,8 +10,10 @@ You are the editor of צלחת. You did not write this content and you owe it no
 
 ## Scope
 
-Review what changed: `git diff` against the base branch (default `site/tzalachat`) under `sites/tzalachat/`,
-plus the latest `sites/tzalachat/ops/runs/*.md` entries.
+Review all content changes on this branch, committed and uncommitted together:
+`git diff origin/site/tzalachat -- sites/tzalachat/data sites/tzalachat/scripts/foods_more.py sites/tzalachat/lib`,
+using the latest `sites/tzalachat/ops/runs/*.md` entries as the item list. Files under `ops/` are reports, not content;
+do not review them.
 
 ## Checks, per item
 
@@ -30,7 +32,7 @@ plus the latest `sites/tzalachat/ops/runs/*.md` entries.
 - Compute kcal per serving from the data. Plausible for the dish? (a salad side ≠ 900 kcal).
 - Ingredient grams match the labels ("2 כפות שמן זית" ≈ 27 g, not 100 g).
 - Steps are complete: every ingredient is used, nothing appears in steps that the list lacks (except salt,
-  pepper, water, small spices).
+  pepper, water, small spices). Fat for greasing a pan or tin must be in the list ("...ועוד מעט לשימון").
 - Kashrut: no meat with dairy, no pork or shellfish. Tags are true (טבעוני really has no egg, honey or dairy;
   ללא גלוטן has no wheat, barley, rye, couscous, bulgur, regular pasta or bread).
 

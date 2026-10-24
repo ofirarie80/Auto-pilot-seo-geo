@@ -13,7 +13,7 @@ JSON files, so almost all content work means editing data, not pages.
 | Comparisons ("X מול Y") | `lib/data.ts` `CURATED_PAIRS` | Add a pair of food slugs |
 | Popular foods on home page | `lib/data.ts` `POPULAR` | |
 | Calculators | `app/tools/*`, `components/*Calculator.tsx` | Code change, needs review |
-| Work reports | `ops/opportunities/`, `ops/reviews/` | Written by the agents |
+| Work reports | `ops/opportunities/` (scout), `ops/runs/` (writer log), `ops/reviews/` (reviewer) | Written by the agents |
 
 Food tuple: `("slug", "שם בעברית", "USDA ndb", "category", [("serving label", grams), ...], ["aliases"])`.
 Categories: fruits, vegetables, bread, grains, dairy, meat, fish, legumes, nuts, fats, sweets, drinks, dishes, herbs.

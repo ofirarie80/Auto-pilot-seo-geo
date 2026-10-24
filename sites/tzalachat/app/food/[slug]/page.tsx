@@ -10,6 +10,8 @@ import NutritionLabel from "@/components/NutritionLabel";
 import JsonLd from "@/components/JsonLd";
 import MacroDonut from "@/components/MacroDonut";
 import FoodCard from "@/components/FoodCard";
+import FoodImage from "@/components/FoodImage";
+import { IMAGED } from "@/lib/foodImages";
 
 export const dynamicParams = false;
 export function generateStaticParams() { return foods.map((f) => ({ slug: f.slug })); }
@@ -60,7 +62,7 @@ export default async function FoodPage({ params }: { params: Promise<{ slug: str
         <nav className="crumbs" aria-label="פירורי לחם">
           <Link href="/">{SITE.name}</Link> / <Link href={`/category/${cat.slug}`}>{cat.name}</Link> / {f.name}
         </nav>
-        <div className="food-hero-grid">
+        <div className={`food-hero-grid${IMAGED.has(f.slug) ? " has-img" : ""}`}>
           <div>
             <h1>כמה קלוריות יש ב{s}?</h1>
             <ServingPicker servings={f.servings} per100={{ kcal: f.n.kcal ?? 0, protein: f.n.protein ?? 0, carbs: f.n.carbs ?? 0, fat: f.n.fat ?? 0 }} />
@@ -70,7 +72,8 @@ export default async function FoodPage({ params }: { params: Promise<{ slug: str
               </ul>
             )}
           </div>
-          <MacroDonut n={f.n} size={230} center={kcal(f.n.kcal)} sub={'קק"ל ל-100 גרם'} />
+          <FoodImage slug={f.slug} alt={f.name} className="hero-photo" eager />
+          <div className="donut-col"><MacroDonut n={f.n} size={IMAGED.has(f.slug) ? 190 : 230} center={kcal(f.n.kcal)} sub={'קק"ל ל-100 גרם'} /></div>
         </div>
       </section>
 

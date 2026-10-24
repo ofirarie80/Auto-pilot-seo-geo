@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 import { SITE, categories, LISTS, foods, recipes } from "@/lib/data";
 import Logo from "@/components/Logo";
+import ImageStyleSwitch from "@/components/ImageStyleSwitch";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main>{children}</main>
+        {process.env.VERCEL_ENV !== "production" && <ImageStyleSwitch />}
         <footer className="site-foot">
           <div className="wrap">
             <div className="cols">
